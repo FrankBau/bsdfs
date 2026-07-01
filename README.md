@@ -1,2 +1,8 @@
-# bsdfs
-Bounded Scope Depth-First-Search for Finding Length Bound Simple Paths and Cycles in Directed Graphs
+Code for
+
+Frank Bauernöppel, Jörg-Rüdiger Sack
+
+"Enumerating Length-Bounded Simple Paths and Cycles in
+Directed Graphs with O(k(|V | + |E|)) Delay"
+
+to appear
