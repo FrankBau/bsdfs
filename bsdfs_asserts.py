@@ -38,6 +38,7 @@ def bsdfs(G, s, t, k):
             for p in G.predecessors(q):
                 if p not in S and b[p] > d + 1:
                     b[p] = d + 1
+                    assert b[p] >= dist(G, S[:-1], p, t), "Fruitful Distance Lower Bound" 
                     queue.append((p, d + 1))
 
     def search(v):

@@ -1,3 +1,10 @@
+The original BC-DFS algorithm was translated by me from pseudo-code
+and is fully attributed to the original authors, see README.md.
+
+The following license applies to all BC-DFS additions,
+corrections, modifications, and all BS-DFS related code:
+
+
 BSD 3-Clause License
 
 Copyright (c) 2026, Frank Bauernöppel

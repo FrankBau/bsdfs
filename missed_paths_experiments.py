@@ -1,7 +1,9 @@
 import networkx as nx
 import random
-import peng
-import bsdfs
+# from bcdfs import bcdfs
+# from dfs import all_simple_paths as bcdfs
+from bsdfs_trivial import bsdfs as bcdfs
+from bsdfs import bsdfs
 import math
 import statistics
 import numpy as np
@@ -68,8 +70,8 @@ def worker_ws(args):
             if reachable:
                 t = random.choice(reachable)
 
-        P_bs = set(map(tuple, bsdfs.bsdfs(G, s, t, k)))
-        P_bc = set(map(tuple,  peng.bcdfs(G, s, t, k)))
+        P_bs = set(map(tuple, bsdfs(G, s, t, k)))
+        P_bc = set(map(tuple,  bcdfs(G, s, t, k)))
         missed = P_bs - P_bc  # the real Δ
         spurious = P_bc - P_bs  # must be empty if BC-DFS is sound
         assert not spurious, (G.edges, s, t, k, spurious)
@@ -103,8 +105,8 @@ def worker_er(args):
             if reachable:
                 t = random.choice(reachable)
 
-        P_bs = set(map(tuple, bsdfs.bsdfs(G, s, t, k)))
-        P_bc = set(map(tuple,  peng.bcdfs(G, s, t, k)))
+        P_bs = set(map(tuple, bsdfs(G, s, t, k)))
+        P_bc = set(map(tuple, bcdfs(G, s, t, k)))
         missed = P_bs - P_bc  # the real Δ
         spurious = P_bc - P_bs  # must be empty if BC-DFS is sound
         assert not spurious, (G.edges, s, t, k, spurious)

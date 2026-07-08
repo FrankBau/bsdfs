@@ -1,20 +1,28 @@
-from collections import deque
+"""searching counter-examples for S*U*S* event structure in the loose scheme"""
 
+
+from collections import deque
+from collections import defaultdict
 
 def bsdfs(G, s, t, k):
-    """tight scheme (original BSDFS)"""
+    """loose scheme, barriers are reset to 0"""
     b = {x: 0 for x in G.nodes}
     S = []
-
-    def fruitful(v, sd):
-        b[v] = sd
-        queue = deque([(v, sd)])
+    usu = defaultdict(str)
+    violators = set()
+    
+    def reset(v):
+        b[v] = 0
+        queue = deque([v])
         while queue:
-            q, d = queue.popleft()
+            q = queue.popleft()
             for p in G.predecessors(q):
-                if p not in S and b[p] > d + 1:
-                    b[p] = d + 1
-                    queue.append((p, d + 1))
+                if p not in S and b[p] != 0:
+                    b[p] = 0
+                    if "us" in usu[p]:
+                        violators.add(p)
+                    usu[p] += 'u'
+                    queue.append(p)
 
     def search(v):
         S.append(v)
@@ -23,16 +31,20 @@ def bsdfs(G, s, t, k):
         for w in G.successors(v):
             if b[w] + h < k:
                 if w == t:
+                    assert not violators, f"{s=} {t=} {k=} {G.edges=} {violators=}" 
                     yield S + [t]
                     sd = 1
+                    usu.clear()
+                    violators.clear()
                 elif w not in S:
                     d = yield from search(w)
                     sd = min(sd, d + 1)
 
         if sd <= k:
-            fruitful(v, sd)
+            reset(v)
         else:
             b[v] = k - h + 1
+            usu[v] += 's'
 
         S.pop()
         return sd
@@ -99,7 +111,7 @@ def validate_er(n, runs, processes=None):
 
 import random
 import time
-import math
+
 
 def performance(algo):
     random.seed(42)
@@ -108,7 +120,7 @@ def performance(algo):
         for k in range(2, n + 1):
             tasks = []
             for run in range(runs):
-                m = int(n * math.exp(random.uniform(0, math.log(n-1))))
+                m = random.randint(n, n * (n - 1))
                 G = nx.gnm_random_graph(n, m, directed=True)
                 s, t = random.sample(range(n), 2)
                 tasks.append((G, s, t, k))
@@ -142,16 +154,14 @@ def main():
 
 
 if __name__ == "__main__":
+    s = 1
+    t = 0
+    k = 2 
+    G = nx.DiGraph()
+    G.add_edges_from([(0, 1), (0, 2), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 1), (3, 2)])
+    list(bsdfs(G, s, t, k))
+    # asserts
     
-    # # Y: counter-example to claimed monotonicity (||S2|| > ||S1||)
-    Y = nx.DiGraph()
-    Y.add_edges_from([(0, 1), (0, 2), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (2, 5), (3, 1), (4, 0), (4, 1), (4, 2), (4, 3), (4, 5), (5, 1)])
-    s = 4
-    t = 5
-    k = 5
-    pathsY = list(bsdfs(Y, s, t, k))
-    print(pathsY)
-        
     smoke()
-    # main()
-    performance(bsdfs)
+    main()
+    # performance(bsdfs)

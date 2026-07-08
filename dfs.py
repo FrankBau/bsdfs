@@ -1,43 +1,21 @@
-from collections import deque
+import networkx as nx
+from math import inf
 
+def all_simple_paths(G, s, t, k=inf):
+    """minimalistic depth-limited DFS for simple path enumeration"""
+    path = []
 
-def bsdfs(G, s, t, k):
-    """tight scheme (original BSDFS)"""
-    b = {x: 0 for x in G.nodes}
-    S = []
+    def dfs(v):
+        if v == t:
+            yield path + [t]
+        elif len(path) < k:
+            path.append(v)
+            for w in G.successors(v):
+                if w not in path:
+                    yield from dfs(w)
+            path.pop()
 
-    def fruitful(v, sd):
-        b[v] = sd
-        queue = deque([(v, sd)])
-        while queue:
-            q, d = queue.popleft()
-            for p in G.predecessors(q):
-                if p not in S and b[p] > d + 1:
-                    b[p] = d + 1
-                    queue.append((p, d + 1))
-
-    def search(v):
-        S.append(v)
-        h = len(S) - 1
-        sd = k + 1
-        for w in G.successors(v):
-            if b[w] + h < k:
-                if w == t:
-                    yield S + [t]
-                    sd = 1
-                elif w not in S:
-                    d = yield from search(w)
-                    sd = min(sd, d + 1)
-
-        if sd <= k:
-            fruitful(v, sd)
-        else:
-            b[v] = k - h + 1
-
-        S.pop()
-        return sd
-
-    yield from search(s)
+    yield from dfs(s)
 
 
 import networkx as nx
@@ -58,7 +36,7 @@ def worker_er(args):
     s, t = random.sample(range(n), 2)
 
     # we cutoff when a number of paths was generated
-    paths1 = list(islice(bsdfs(G, s, t, k), 500))
+    paths1 = list(islice(all_simple_paths(G, s, t, k), 500))
     assert paths1 == sorted(paths1)  # lexicographic order
     paths2 = list(islice(nx.all_simple_paths(G, s, t, k), 500))
     assert paths2 == sorted(paths2)  # lexicographic order
@@ -99,7 +77,7 @@ def validate_er(n, runs, processes=None):
 
 import random
 import time
-import math
+
 
 def performance(algo):
     random.seed(42)
@@ -108,7 +86,7 @@ def performance(algo):
         for k in range(2, n + 1):
             tasks = []
             for run in range(runs):
-                m = int(n * math.exp(random.uniform(0, math.log(n-1))))
+                m = random.randint(n, n * (n - 1))
                 G = nx.gnm_random_graph(n, m, directed=True)
                 s, t = random.sample(range(n), 2)
                 tasks.append((G, s, t, k))
@@ -125,7 +103,7 @@ def performance(algo):
 
 
 def smoke():
-    # quick test for major error and general failure
+    # smoke test for major error and general failure
     for n in range(2, 8):
         validate_er(n, 10_000, processes=0)
 
@@ -142,16 +120,5 @@ def main():
 
 
 if __name__ == "__main__":
-    
-    # # Y: counter-example to claimed monotonicity (||S2|| > ||S1||)
-    Y = nx.DiGraph()
-    Y.add_edges_from([(0, 1), (0, 2), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (2, 5), (3, 1), (4, 0), (4, 1), (4, 2), (4, 3), (4, 5), (5, 1)])
-    s = 4
-    t = 5
-    k = 5
-    pathsY = list(bsdfs(Y, s, t, k))
-    print(pathsY)
-        
     smoke()
-    # main()
-    performance(bsdfs)
+    main()
