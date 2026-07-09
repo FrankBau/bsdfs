@@ -3,7 +3,7 @@ from collections import deque
 def dist(G, S, x, y):
     q = deque()
     q.append((x, 0))
-    seen = {x} | set(S) - {y}
+    seen = ({x} | set(S)) - {y}
 
     while q:
         u, d = q.popleft()
@@ -29,21 +29,41 @@ def bsdfs(G, s, t, k):
     """tight scheme (original BSDFS)"""
     b = {x: 0 for x in G.nodes}
     S = []
+    seen_search_paths = set()
+    seen_outputs = set()
 
     def fruitful(v, sd):
         b[v] = sd
+        enqueued = set()
         queue = deque([(v, sd)])
+        enqueued.add(v)
         while queue:
             q, d = queue.popleft()
             for p in G.predecessors(q):
                 if p not in S and b[p] > d + 1:
+                    old = b[p]
                     b[p] = d + 1
+                    assert b[p] < old, "Cascade Strictly Decreases (Obs. 9)"
                     assert b[p] >= dist(G, S[:-1], p, t), "Fruitful Distance Lower Bound" 
                     queue.append((p, d + 1))
+                    enqueued.add(p)
+        for u in G.nodes:
+            if u not in S:
+                if u in enqueued:
+                    assert b[u] == sd + dist(G, S, u, v), "Cascade Distance (enqueued)"
+                else:
+                    assert b[u] <= sd + dist(G, S, u, v), "Cascade Distance (other)"
 
     def search(v):
+        assert v not in S, "Search Path Stays Simple (Obs. 1)"
+        key = tuple(S + [v])
+        assert key not in seen_search_paths, "Search Path Occurs At Most Once (Obs. 3)"
+        seen_search_paths.add(key)
         bar_entry = b.copy()
         check_edge_consistency(G, S, b) # S does *not* contain v here
+        assert b[s] == 0, "Source Barrier Stays 0 (Obs. 7)"
+        assert b[t] == 0, "Target Barrier Stays 0 (Obs. 8)"
+
         S.append(v)
         h = len(S) - 1
         assert b[v] <= k - h, "Parent Pruning Guard"
@@ -51,16 +71,27 @@ def bsdfs(G, s, t, k):
         for w in G.successors(v):
             if b[w] + h < k:
                 if w == t:
+                    out = tuple(S + [t])
+                    assert out not in seen_outputs, "No Output Produced Twice (Obs. 4)"
+                    seen_outputs.add(out)
+                    assert h + 1 <= k, "Output Length Bound"
                     yield S + [t]
                     sd = 1
                 elif w not in S:
                     d = yield from search(w)
                     sd = min(sd, d + 1)
+            else:
+                if w == t:
+                    assert h == k, "Target Only Pruned at Max Depth"
+                elif w not in S:
+                    assert dist(G, S, w, t) + h >= k, "Pruning-is-Permissive"
 
+        assert b[v] == bar_entry[v], "Barrier of v Untouched Until Final Write (Obs. 6)"
         assert all(b[x] >= bar_entry[x] for x in G.nodes), "all(bar[x] >= bar_before[x]) (before update)"
         check_edge_consistency(G, S, b) # S *does* contain v here
         assert b[v] <= sd, "bar[v] <= sd (Barrier Invariant)"
-        
+        assert sd >= 0, "Return Value Non-Negative (Obs. 5)"
+
         if sd <= k:
             assert sd == dist(G, S, v, t), "Strict Barrier Invariant"
             fruitful(v, sd)
@@ -69,7 +100,7 @@ def bsdfs(G, s, t, k):
             b[v] = k - h + 1
             assert b[v] > bar_entry[v], "Fruitless Increasing"
             
-        assert all(b[x] >= bar_entry[x] for x in G.nodes), "all(bar[x] >= bar_before[x] (after update)"
+        assert all(b[x] >= bar_entry[x] for x in G.nodes), "Per-Call Global Monotonicity"
 
         S.pop()
         check_edge_consistency(G, S, b) # S does *not* contain v here
