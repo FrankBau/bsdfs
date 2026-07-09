@@ -122,7 +122,6 @@ def worker_er(args):
     p = random.uniform(0, 1)
     k = random.getrandbits(n).bit_count()  # binomial distribution
     k = max(k, 1)
-
     G = nx.gnp_random_graph(n, p, directed=True)
     s, t = random.sample(range(n), 2)
 
