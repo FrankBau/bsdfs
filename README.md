@@ -5,18 +5,18 @@ Companion to
     Frank Bauernöppel and Jörg-Rüdiger Sack
     "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with $O(k(n+m))$ Delay Using Edge-Consistent Node Barriers"
 
-, to appear.
+to appear.
 
 
-# Simple $s$-$t$ Path Enumeration
+# Simple s-t Path Enumeration
 
-`bsdsf(G, s, t, k)` enumerates all length $k$ bouned simple paths 
+`bsdsf(G, s, t, k)` enumerates all length $k$ bounded simple paths 
 from node $s$ to node $t$ in the directed graph $G$. 
 The delay is $O(k(n+m))$ per output with small constants.
 
-It replaces BC-DFS which has issues, see the upcoming paper.
+It replaces `BC-DFS` which has issues, see the upcoming paper.
 
-The original BC-DFS algorithm was translated from
+The original `BC-DFS` algorithm was translated from
 
     author       = {Peng, You and Lin, Xuemin and Zhang, Ying and Zhang, Wenjie and Qin, Lu and Zhou, Jingren},
     title        = {Efficient Hop-constrained s-t Simple Path Enumeration},
@@ -47,19 +47,19 @@ and
     pages      = {463-476},
     numpages   = {14}
 
-where BC-DFS was introduced and appears in pseudo-code.
+where `BC-DFS` was introduced and appears in pseudocode.
 
-Caution: BC-DFS is not complete: it can miss some output; 
+Caution: `BC-DFS` is not complete: it can miss some output; 
 and its delay is unknown, as explained in our paper.
 
 
-# Simple $s$-Cycle Enumeration
+# Simple s-Cycle Enumeration
 
 `bsdsf(G, s, s, k)` enumerates all length $k$ bounded simple cycles 
 containing node $s$ in the directed graph $G$.
 The delay is $O(k(n+m))$ per output with small constants.
 
-It replaces the inner loop `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.08392:
+It replaces `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.08392:
 
     title         = {Finding All Bounded-Length Simple Cycles in a Directed Graph -- Revisited},
     author        = {Frank Bauernöppel and Jörg-Rüdiger Sack},
@@ -68,14 +68,14 @@ It replaces the inner loop `CYCLE_SEARCH` which has issues, see https://arxiv.or
     doi           = {10.48550/arXiv.2512.08392},
 
 
-The original CYCLE_SEARCH algorithm was translated from https://arxiv.org/abs/2105.10094
+The original `CYCLE_SEARCH` algorithm was translated from https://arxiv.org/abs/2105.10094
 
     title      = {Finding All Bounded-Length Simple Cycles in a Directed Graph},
     author     = {Anshul Gupta and Toyotaro Suzumura},
     year       = {2021},
     doi        = {10.48550/arXiv.2105.10094},
 
-where BC-DFS was introduced and appears in pseudo-code.
+where `CYCLE_SEARCH` was introduced and appears in pseudocode.
 
-Caution: CYCLE_SEARCH is not complete: it can miss some output;
+Caution: `CYCLE_SEARCH` is not complete: it can miss some output;
 and its delay is unknown, as explained in our preprint.
