@@ -5,7 +5,7 @@ Companion to
     Frank Bauernöppel and Jörg-Rüdiger Sack
     "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with $O(k(n+m))$ Delay Using Edge-Consistent Node Barriers"
 
-to appear.
+submitted to JGAA.
 
 
 # Simple s-t Path Enumeration
@@ -14,7 +14,7 @@ to appear.
 from node $s$ to node $t$ in the directed graph $G$. 
 The delay is $O(k(n+m))$ per output with small constants.
 
-It replaces `BC-DFS` which has issues, see the upcoming paper.
+It can replace `BC-DFS` which has issues, see the upcoming paper.
 
 The original `BC-DFS` algorithm was translated from
 
@@ -59,7 +59,7 @@ and its delay is unknown, as explained in our paper.
 containing node $s$ in the directed graph $G$.
 The delay is $O(k(n+m))$ per output with small constants.
 
-It replaces `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.08392:
+It can replace `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.08392:
 
     title         = {Finding All Bounded-Length Simple Cycles in a Directed Graph -- Revisited},
     author        = {Frank Bauernöppel and Jörg-Rüdiger Sack},
