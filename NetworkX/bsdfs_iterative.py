@@ -1,5 +1,22 @@
 from collections import defaultdict, deque
 
+# taken from https://github.com/networkx/networkx/blob/main/networkx/algorithms/cycles.py
+class _NeighborhoodCache(dict):
+    """Very lightweight graph wrapper which caches neighborhoods as list.
+
+    This dict subclass uses the __missing__ functionality to query graphs for
+    their neighborhoods, and store the result as a list.  This is used to avoid
+    the performance penalty incurred by subgraph views.
+    """
+
+    def __init__(self, G):
+        self.G = G
+
+    def __missing__(self, v):
+        Gv = self[v] = list(self.G[v])
+        return Gv
+    
+
 def bsdfs(G, s, t, k):
     """Tight-scheme BS-DFS, fully iterative, parallel stacks."""
     b = defaultdict(int)          # barrier values; untouched nodes are 0
@@ -8,12 +25,15 @@ def bsdfs(G, s, t, k):
     iters = [iter(G.successors(s))]
     sds = [k + 1]
 
+    succ = _NeighborhoodCache(G)          # G[v]  -> successors
+    pred = _NeighborhoodCache(G.pred)     # G.pred[v] -> predecessors
+
     def fruitful(v, sd):
         b[v] = sd
         queue = deque([(v, sd)])
         while queue:
             q, d = queue.popleft()
-            for p in G.predecessors(q):
+            for p in pred[q]:
                 if p not in on_stack and b[p] > d + 1:
                     b[p] = d + 1
                     queue.append((p, d + 1))
@@ -28,7 +48,7 @@ def bsdfs(G, s, t, k):
                 elif w not in on_stack:
                     S.append(w)
                     on_stack.add(w)
-                    iters.append(iter(G.successors(w)))
+                    iters.append(iter(succ[w]))
                     sds.append(k + 1)
                     break
         else:

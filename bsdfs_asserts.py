@@ -93,13 +93,23 @@ def bsdfs(G, s, t, k):
         assert sd >= 0, "Return Value Non-Negative (Obs. 5)"
 
         if sd <= k:
+            assert sd >= b[v], "Fruitful writes never lower"
             assert sd == dist(G, S, v, t), "Strict Barrier Invariant"
             fruitful(v, sd)
             assert b[v] >= bar_entry[v], "Fruitful Non-Decreasing"
         else:
             b[v] = k - h + 1
             assert b[v] > bar_entry[v], "Fruitless Increasing"
-            
+
+            #### NEW ####
+            for x in set(G.nodes) - set(S):
+                c = (k - h + 1) - dist(G, S, v, x)
+                assert b[x] >= c
+                # for nodes x visited during search recursion, equality holds
+                if b[x] > bar_entry[x]:  assert b[x] == c
+                # node is entered iff its entry barrier lay strictly below the cone.
+                assert (b[x] > bar_entry[x]) == (bar_entry[x] < c)
+
         assert all(b[x] >= bar_entry[x] for x in G.nodes), "Per-Call Global Monotonicity"
 
         S.pop()

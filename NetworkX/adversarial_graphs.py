@@ -72,6 +72,15 @@ def dag_plus_backedges(n, p, beta, rng):
     return G
 
 
+def ring(n, r):
+    """ r‑neighbour circulant digraph"""
+    G = nx.DiGraph()
+    G.add_nodes_from(range(n))
+    for u in range(n):
+        for v in range(u+1, u+r+1):
+            G.add_edge(u, v % n)
+    return G 
+
 def loose_breaker(k, F):
     """Spine s->v1..vp->t (+ s->a->t), d-chain d1..d_{k-2} each dj->x,
     hub x with fan of size F, conduit x->d1, branches d_{j(t)}->v_t
