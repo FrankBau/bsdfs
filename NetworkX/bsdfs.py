@@ -46,19 +46,22 @@ import random
 from multiprocessing import Pool
 from tqdm import tqdm
 from itertools import islice
-from networkx.algorithms.cycles import _bounded_cycle_search, _johnson_cycle_search
 
-def paths_worker_er(args, limit=1000):
+
+def worker_er(args, limit=1000):
     n, run = args
     random.seed(42 + run)
     m = int(n * math.exp(random.uniform(0, math.log(n-1))))
     G = nx.gnm_random_graph(n, m, directed=True)
     s, t = random.sample(list(G.nodes), 2)
     k = math.inf
+    
     # we cutoff when a number of paths was generated
-    paths1 = list(islice(bsdfs(G, s, t, k), limit))
-    # paths2 = list(islice(nx.all_simple_paths(G, s, t, k), limit))
-    paths2 = list(islice(nx.all_simple_paths(G, s, t), limit))
+    paths1 = islice(bsdfs(G, s, t, k), limit)
+    paths2 = islice(nx.all_simple_paths(G, s, t, k), limit)
+    
+    
+    
     if paths1 != paths2:
         ps1 = set(map(tuple, paths1))
         ps2 = set(map(tuple, paths2))
@@ -68,28 +71,6 @@ def paths_worker_er(args, limit=1000):
             f"{s=} {t=} {k=} {G.edges=} {list(missing1)[:1]=}  {list(missing2)[:1]=}"
         )
     return len(paths1)
-
-
-def cycles_worker_er(args, limit=None):
-    n, run = args
-    random.seed(42 + run)
-    m = int(n * math.exp(random.uniform(0, math.log(n-1))))
-    G = nx.gnm_random_graph(n, m, directed=True)
-    s = random.choice(list(G.nodes))
-    k = math.inf
-    # we cutoff when a number of cycles was generated
-    cycles1 = list(islice(bsdfs(G, s, s, k), limit))
-    # cycles2 = list(islice(nx.all_simple_cycles(G, s, t, k), limit))
-    cycles2 = list(islice(_johnson_cycle_search(G, [s]), limit))
-    if cycles1 != cycles2:
-        ps1 = set(map(tuple, cycles1))
-        ps2 = set(map(tuple, cycles2))
-        missing2 = ps1 - ps2
-        missing1 = ps2 - ps1
-        raise AssertionError(
-            f"{s=} {t=} {k=} {G.edges=} {list(missing1)[:1]=}  {list(missing2)[:1]=}"
-        )
-    return len(cycles1)
 
 
 def task_er(n, runs):
@@ -103,7 +84,7 @@ def validate_er(n, runs, processes=None):
 
     if processes == 0:
         for run in tqdm(range(runs), leave=False):
-            sum_paths += cycles_worker_er((n, run))
+            sum_paths += worker_er((n, run))
         return sum_paths
 
     with Pool(processes) as pool:

@@ -10,37 +10,23 @@ from itertools import islice
 import adversarial_graphs
 
 from bsdfs_nx import bsdfs_bounded_cycle_search
-from bsdfs_lazy import bsdfs as bsdfs_lazy
-from bsdfs_loose import bsdfs as bsdfs_loose
 from networkx.algorithms.cycles import _bounded_cycle_search
-
-ALGOS = {
-    "bounded_cycle_search":  lambda G, s, k: _bounded_cycle_search(G, [s], k),
-    "bsdfs": lambda G, s, k: bsdfs_bounded_cycle_search(G, [s], k),
-    "bsdfs_loose": lambda G, s, k: bsdfs_loose(G, s, s, k),
-    "bsdfs_lazy": lambda G, s, k: bsdfs_lazy(G, s, s, k),
-}
-
-algo1_name = "bsdfs"
-algo2_name = "bounded_cycle_search"
-# algo2_name = "bsdfs_loose"
-# algo2_name = "bsdfs_lazy"
 
 
 seed = 42
 random.seed(seed)
 
 
-def ring_family(n_values, r, seeds=(0,)):
+def circulant_family(n_values, r=4, seeds=(0,)):
     """n_values should be multiples of r"""
     for n in n_values:
-        G = adversarial_graphs.ring(n, r)
+        G = adversarial_graphs.circulant(n, r)
         k_min = n // r
-        k_max = n // r + 1
+        k_max = n // r + 2
         for k in range(k_min, k_max+1):
-            yield f"ring/n={n}/r={r}/k={k}", {"n": n, "r": r}, (G, 0, k)
-            
-            
+            yield f"circulant/n={n}/r={r}/k={k}", {"n": n, "r": r}, (G, 0, k)
+
+
 def diamond_chain_family(t_values, seeds=(0,)):
     for t in t_values:
         for s in seeds:                 # seeds unused for deterministic gadgets
@@ -116,6 +102,12 @@ def dag_backedge_family(n_values, beta_values, p=None, seeds=range(10)):
                        {"n": n, "beta": beta}, (G, s, k))
 
 
+ALGOS = {
+    "bounded_cycle_search":  lambda G, s, k: _bounded_cycle_search(G, [s], k),
+    "bsdfs": lambda G, s, k: bsdfs_bounded_cycle_search(G, [s], k),
+}
+
+
 import statistics
 from collections import deque
 from itertools import islice, zip_longest
@@ -160,7 +152,7 @@ def run_family(family_iter, algos, limit=None, repeats=3, compare=None):
         # --- correctness pass: untimed, lockstep, O(1) memory ---
         n_cycles = _check_lockstep([fn(*args) for fn in algos.values()], limit, names, compare)
         cut = limit is not None and n_cycles == limit
-        print(f"{inst_id=} {n_cycles=}")
+        print(f"{inst_id=} {n_cycles=}", end="\r")
 
         # --- timing passes: bulk consumption, median of repeats ---
         for name, fn in algos.items():
@@ -209,11 +201,14 @@ def scatter_compare(title, records, algo_x, algo_y, color_by="cycles", log=True)
 
 ########################## benchmark runs ###########################
 
-if True:
-    records = run_family(ring_family(n_values=range(8, 80, 4), r=4), ALGOS)
-    fig = scatter_compare("ring_family", records, algo1_name, algo2_name)
-    fig.savefig("ring_family.png")
+algo1_name = "bsdfs"
+algo2_name = "bounded_cycle_search"
 
+if True:
+    records = run_family(circulant_family(n_values=range(8, 64, 4), r=4), ALGOS)
+    fig = scatter_compare("circulant_family", records, algo1_name, algo2_name)
+    fig.savefig("circulant_family.png")
+    
 if True:
     records = run_family(diamond_chain_family(t_values=range(5, 25)), ALGOS)
     fig = scatter_compare("diamond_chain_family", records, algo1_name, algo2_name)

@@ -5,7 +5,7 @@ def bsdfs(G, s, t, k):
     """loose scheme, barriers are reset to 0"""
     b = {x: 0 for x in G.nodes}
     S = []
-
+    
     def reset(v):
         b[v] = 0
         queue = deque([v])

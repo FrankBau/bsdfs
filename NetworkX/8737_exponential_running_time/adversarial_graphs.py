@@ -3,6 +3,16 @@
 import networkx as nx
 
 
+def circulant(n, r):
+    """ directed r-neighbour circulant digraph"""
+    G = nx.DiGraph()
+    G.add_nodes_from(range(n))
+    for u in range(n):
+        for v in range(u+1, u+r+1):
+            G.add_edge(u, v % n)
+    return G
+
+
 def diamond_chain(t):
     G = nx.DiGraph()
     for i in range(t):
@@ -71,15 +81,6 @@ def dag_plus_backedges(n, p, beta, rng):
             G.add_edge(j, i)
     return G
 
-
-def ring(n, r):
-    """ r‑neighbour circulant digraph"""
-    G = nx.DiGraph()
-    G.add_nodes_from(range(n))
-    for u in range(n):
-        for v in range(u+1, u+r+1):
-            G.add_edge(u, v % n)
-    return G 
 
 def loose_breaker(k, F):
     """Spine s->v1..vp->t (+ s->a->t), d-chain d1..d_{k-2} each dj->x,
