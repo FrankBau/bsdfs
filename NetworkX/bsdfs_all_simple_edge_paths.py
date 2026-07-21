@@ -29,7 +29,13 @@ import networkx as nx
 
 def bsdfs_all_simple_edge_paths(G, source, targets, cutoff):
     if cutoff is None:
-        cutoff = len(G) - 1
+        cutoff = len(G) - 1 
+        # this is correct, but the resulting O(k(n+m)) delay for BS-DFS is not optimal for k = n-1.
+        # A more efficient algorithm would be Johnson's circuit finding algo with O(n+m) delay, 
+        # using Boolean barriers and B-lists, but it needs pre-processing (path/cycle reduction) 
+        # and adaptions to fit all [Multi][Di]Graph and edge-cases. 
+        # This is mainly mechanical work, should be doable with AI assistance within a day or so.
+        # Anyway, using BS-DFS here gives the first polynomial delay bound compared earlier versions.
     k = cutoff
     if k < 0 or not targets:
         return
