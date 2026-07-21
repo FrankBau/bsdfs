@@ -29,11 +29,11 @@ import networkx as nx
 
 def bsdfs_all_simple_edge_paths(G, source, targets, cutoff):
     if cutoff is None:
-        cutoff = len(G) - 1 
+        cutoff = len(G) - 1
         # this is correct, but the resulting O(k(n+m)) delay for BS-DFS is not optimal for k = n-1.
-        # A more efficient algorithm would be Johnson's circuit finding algo with O(n+m) delay, 
-        # using Boolean barriers and B-lists, but it needs pre-processing (path/cycle reduction) 
-        # and adaptions to fit all [Multi][Di]Graph and edge-cases. 
+        # A more efficient algorithm would be Johnson's circuit finding algo with O(n+m) delay,
+        # using Boolean barriers and B-lists, but it needs pre-processing (path/cycle reduction)
+        # and adaptions to fit all [Multi][Di]Graph and edge-cases.
         # This is mainly mechanical work, should be doable with AI assistance within a day or so.
         # Anyway, using BS-DFS here gives the first polynomial delay bound compared earlier versions.
     k = cutoff
@@ -198,18 +198,6 @@ def validate_er(n, runs, processes=None):
             sum_paths += result
         print(f"{n=:4} {sum_paths=:,}")
         return sum_paths
-    
-
-def random_test():
-    # quick test for major error and general failure
-    for n in range(2, 5):
-        validate_er(n, 1_000, processes=0)
-
-    for n in range(2, 10):
-        validate_er(n, 100_000)
-
-    for n in range(10, 15):
-        validate_er(n, 10_000)
 
 
 def monkey_patching_pytest():
@@ -229,6 +217,86 @@ def monkey_patching_pytest():
     # now restored
 
 
+def random_test():
+    # quick test for major error and general failure
+    for n in range(2, 5):
+        validate_er(n, 1_000, processes=0)
+
+    for n in range(2, 10):
+        validate_er(n, 100_000)
+
+    for n in range(10, 15):
+        validate_er(n, 10_000)
+
+
+def performance_test():
+    import networkx as nx
+    import random
+    import time
+    import math
+    import matplotlib.pyplot as plt
+    from itertools import islice
+
+    def circulant(n, r):
+        """directed r-neighbour circulant digraph"""
+        G = nx.DiGraph()
+        G.add_nodes_from(range(n))
+        for u in range(n):
+            for v in range(u+1, u+r+1):
+                G.add_edge(u, v % n)
+        return G
+
+    seed = 42
+    random.seed(seed)
+
+    runs = 1000
+    limit = 1000
+    r = 2
+    xs = []
+    ys = []
+    cs = []
+    for run in range(runs):
+        n = random.randint(2, 35)   # danger, explosive!
+        G = circulant(n, r)
+        s, t = random.sample(list(G.nodes), 2)
+        k = random.randrange(0, len(G))
+
+        repeats = 3
+        while True:
+            dt1 = dt2 = 0
+            for _ in range(repeats):
+                t0 = time.perf_counter_ns()
+                paths1 = list(islice(bsdfs_all_simple_edge_paths(G, s, [t], k), limit))
+                dt1 += time.perf_counter_ns() - t0
+                t0 = time.perf_counter_ns()
+                paths2 = list(islice(nx.algorithms.simple_paths._all_simple_edge_paths(G, s, [t], k), limit))
+                dt2 += time.perf_counter_ns() - t0
+            if dt1 + dt2 > 1_000_000:
+                break
+            else:
+                repeats = 2*repeats + 1 # stay odd
+        dt1 //= repeats
+        dt2 //= repeats
+        assert paths1 == paths2 # likely
+        print(f"{run=:6}; {n=:4}; {s=:4}; {t=:4}; {k=:4}; {dt1=:12}; {dt2=:12}; {dt1/dt2=:10.4f}; {len(paths1)=:10}")
+        xs.append(dt1/1e9)  # seconds
+        ys.append(dt2/1e9)  # seconds
+        cs.append(math.log10(1 + k))
+
+    fig, ax = plt.subplots()
+    plt.grid(True)
+    ax.set_title("path enum performance on circulant graphs (max. 1000 paths)")
+    sc = ax.scatter(xs, ys, c=cs, cmap="viridis", s=18)
+    lo, hi = min(xs+ys), max(xs+ys)
+    ax.plot([lo, hi], [lo, hi], "k--", lw=0.8)      # identity line
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_aspect("equal")
+    ax.set_xlabel(f"bsdfs time [s]"); ax.set_ylabel(f"all_simple_edge_paths time [s]")
+    fig.colorbar(sc, label=f"log10(1+k)")
+    fig.savefig("circulant_family.png")
+
 if __name__ == "__main__":
-    # monkey_patching_pytest()
+    monkey_patching_pytest()
     random_test()
+    performance_test()
