@@ -19,7 +19,8 @@ def dist(G, S, x, y):
 
 def check_edge_consistency(G, S, b):
     for x, y in G.edges:
-        if x not in S and y not in S:
+        if x not in S and y not in S: # JGAA paper variant, all schemes
+        # if y not in S:    # relaxed variant, holds only in the tight scheme
             assert (
                 b[x] <= b[y] + 1
             ), f"edge {x}→{y}: {b[x]=} > {b[y]+1=}"
