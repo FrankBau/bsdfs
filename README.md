@@ -79,3 +79,7 @@ where `CYCLE_SEARCH` was introduced and appears in pseudocode.
 
 Caution: `CYCLE_SEARCH` is not complete: it can miss some output;
 and its delay is unknown, as explained in our preprint.
+
+
+# Graph Family loose_breaker(k)
+Demonstrating that the O(k(n+m)) delay bound can be broken in the loose and lazy schemes.
