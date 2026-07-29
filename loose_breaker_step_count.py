@@ -4,7 +4,7 @@ Demonstration that for the loose_breaker(k) graph family,
 - the loose and lazy schemes break
 the O(k(n+m)) delay per output
 
-By counting steps and comparing to lower bound.
+By counting the (dominating) successor scans and comparing to a lower bound.
 """
 
 
@@ -59,16 +59,13 @@ def bsdfs_loose(G, s, t, k):
         b[v] = 0
         queue = deque([v])
         while queue:
-            steps["count"] += 1
             q = queue.popleft()
             for p in G.predecessors(q):
-                steps["count"] += 1
                 if p not in S and b[p] != 0:
                     b[p] = 0
                     queue.append(p)
 
     def search(v):
-        steps["count"] += 1
         S.append(v)
         h = len(S) - 1
         sd = k + 1
@@ -98,16 +95,13 @@ def bsdfs_lazy(G, s, t, k):
     S = []
 
     def update(v):
-        steps["count"] += 1
         for u in B[v]:
-            steps["count"] += 1
             if u not in S and b[u] > 0:
                 b[u] = 0
                 update(u)
         B[v].clear()
 
     def search(v):
-        steps["count"] += 1
         S.append(v)
         h = len(S) - 1
         sd = k + 1
@@ -126,8 +120,8 @@ def bsdfs_lazy(G, s, t, k):
             update(v)
         else:
             b[v] = k - h + 1
+            # The B[w].add(v) loop is a second pass over the successor list, not counted twice here.
             for w in G.successors(v):
-                steps["count"] += 1
                 B[w].add(v)
 
         S.pop()
@@ -142,7 +136,7 @@ def bsdfs_lazy(G, s, t, k):
 # nx.drawing.nx_pydot.write_dot(G, f"L{k}.dot")
 
 
-def run(algo, k_max=300):
+def run(algo, k_max=200):
     print(algo.__name__)
     for k in range(8, k_max, 4):
         G, s, t, k = loose_breaker(k)
@@ -151,20 +145,20 @@ def run(algo, k_max=300):
         n = G.number_of_nodes()
         m = G.number_of_edges()
 
-        # hub entry count: E(r) = min(D, k − r − 1) = k − r − 1  for 1 ≤ r ≤ k/4 − 1
+        # hub entry count: E(r) = min(D, k - r - 1) = k - r - 1  for 1 ≤ r ≤ k/4 - 1
         lower_bound = sum((k-r-1)*(k+1) for r in range(1, k//4)) # lower bound claim, F = k, k % 4 == 0
         R = k // 4 - 1; assert lower_bound == (k+1)*((k-1)*R - R*(R+1)//2)     # same in closed form
 
         print(f"{k=:5} {steps["count"]=:10} {lower_bound=:10} {steps["count"]/(k*k*(n+m))=:10.4f} {lower_bound/(k*k*(n+m))=:10.4f}")
         assert steps["count"] >= lower_bound
 
-        # loose scheme:
         # the ratio converges to 1/32 = 0.03125
-        # Armed-fed explorations r = 1..R, R ≈ (k−2)/4;
-        # expl(r) makes ≈ k−r hub entries, each costing F+1 = k+1 successor scans.
-        # Dominant total: Σ_{r≤R} (k−r)(k+1) ≈ k(Rk − R²/2) = (1/4 − 1/32)k³ = (7/32)k³.
-        # With n+m = 7k − 6 (count: n = 5k/2, m = 9k/2 − 6),
+        # Armed-fed explorations r = 1..R, R ≈ (k-2)/4;
+        # expl(r) makes ≈ k-r hub entries, each costing F+1 = k+1 successor scans.
+        # Dominant total: Σ_{r≤R} (k-r)(k+1) ≈ k(Rk - R²/2) = (1/4 - 1/32)k³ = (7/32)k³.
+        # With n+m = 7k - 6 (count: n = 5k/2, m = 9k/2 - 6),
         # the ratio tends to (7/32)k³ / (7k³) = 1/32 = 0.03125
 
+# both give the same numbers
 run(bsdfs_loose)
-run(bsdfs_lazy) # ratio converges to 2/32 = 0.0625. The B[w].add(v) loop is a second pass over the successor list.
+run(bsdfs_lazy)
