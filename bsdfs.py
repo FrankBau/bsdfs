@@ -143,7 +143,7 @@ def main():
 
 if __name__ == "__main__":
     
-    # # Y: counter-example to claimed monotonicity (||S2|| > ||S1||)
+    # Y: counter-example to BC-DFS claimed monotonicity (||S2|| > ||S1||)
     Y = nx.DiGraph()
     Y.add_edges_from([(0, 1), (0, 2), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (2, 5), (3, 1), (4, 0), (4, 1), (4, 2), (4, 3), (4, 5), (5, 1)])
     s = 4
@@ -154,4 +154,4 @@ if __name__ == "__main__":
         
     smoke()
     # main()
-    performance(bsdfs)
+

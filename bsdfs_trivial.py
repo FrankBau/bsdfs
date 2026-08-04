@@ -123,5 +123,4 @@ def main():
 
 if __name__ == "__main__":
     smoke()
-    main()
-    # performance(bsdfs)
+    # main()
