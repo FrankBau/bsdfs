@@ -55,20 +55,24 @@ def bcdfs(G, s, t, k):
     yield from search(s)
 
 
-import networkx as nx
-from bsdfs import bsdfs
-
-
 def main():
+    import networkx as nx
+
+    import experiments_base as base
+
+    # smallest counter-example to BC-DFS's completeness
     G = nx.parse_adjlist(
         ["a b c", "b c d e", "c b d", "d b", "e"], create_using=nx.DiGraph
     )
-
-    paths1 = list(bcdfs(G, s="a", t="e", k=4))
-    assert paths1 == [
+    assert list(bcdfs(G, s="a", t="e", k=4)) == [
         ["a", "b", "e"],
         ["a", "c", "b", "e"],
     ]  # missing ['a', 'c', 'd', 'b', 'e']
+
+    # the same incompleteness at scale: BC-DFS stays sound and
+    # lexicographic, but misses paths on a noticeable fraction of
+    # random instances
+    base.smoke(bcdfs, complete=False)
 
 
 if __name__ == "__main__":

@@ -58,13 +58,14 @@ Steps follow the paper's cost model (sec:work-attribution):
 
 Dependencies: networkx, tqdm (same as missed_paths_experiments.py).
 """
-from collections import deque
+
 from multiprocessing import Pool
 import signal
 
 from tqdm import tqdm
 
 import experiments_base as base
+from trace_eval import measure_delays_traced
 
 CHUNK = 200
 
@@ -78,102 +79,6 @@ STATS = (
 
 
 # ------------------------------------------------------------
-# BS-DFS (tight scheme, bsdfs.py) with the paper's step counter
-# ------------------------------------------------------------
-
-
-def measure_delays(G, s, t, k):
-    """Run bsdfs once; return (p_out, wc0, wcIn, wcT, amP, n_int).
-
-    All five ratios are in units of (k+1)(n+m); see the module docstring
-    for the interval classes and the bound applying to each.  A statistic
-    with no instance in the run stays 0.0.
-    """
-    n, m = G.number_of_nodes(), G.number_of_edges()
-    unit = (k + 1) * (n + m)
-    b = {x: 0 for x in G.nodes}
-    S = []
-    steps = 0
-    prev = 0
-    p_out = 0
-    wc0 = wc_in = wc_T = 0.0
-    amP = 0.0
-
-    def fruitful(v, sd):
-        nonlocal steps
-        b[v] = sd
-        queue = deque([(v, sd)])
-        while queue:
-            q, d = queue.popleft()
-            steps += 1
-            for p in G.predecessors(q):
-                steps += 1
-                if p not in S and b[p] > d + 1:
-                    b[p] = d + 1
-                    queue.append((p, d + 1))
-
-    def search(v):
-        nonlocal steps, prev, p_out, wc0, wc_in, amP
-        S.append(v)
-        h = len(S) - 1
-        steps += 1
-        sd = k + 1
-        for w in G.successors(v):
-            steps += 1
-            if b[w] + h < k:
-                if w == t:
-                    steps += h + 2          # output work, 1 per path node
-                    p_out += 1
-                    # the interval just closed is tau = p_out - 1; it is
-                    # interior whenever tau >= 1, since interval T closes
-                    # at termination, not at an output
-                    r = (steps - prev) / unit
-                    prev = steps
-                    if p_out == 1:
-                        # steps(o_1) == interval 0's delay, so the p = 1
-                        # case of the amortized statistic is exactly wc0
-                        wc0 = r             # occurs exactly once
-                    else:
-                        if r > wc_in:
-                            wc_in = r
-                        q = steps / (p_out * unit)
-                        if q > amP:
-                            amP = q
-                    sd = 1
-                elif w not in S:
-                    d = search(w)
-                    sd = min(sd, d + 1)
-        if sd <= k:
-            fruitful(v, sd)
-        else:
-            b[v] = k - h + 1
-        S.pop()
-        return sd
-
-    search(s)
-    r = (steps - prev) / unit               # segment after the last output
-    if p_out == 0:
-        wc0 = r                             # T = 0: the run is interval 0
-    else:
-        wc_T = r
-    return p_out, wc0, wc_in, wc_T, amP, p_out + 1
-
-
-def replay(family, k, run):
-    """Rebuild and re-measure the instance identified in the output."""
-    make = {"er": base.make_erdos_renyi, "ws": base.make_watts_strogatz}[family]
-    G, s, t = make(run)
-    res = measure_delays(G, s, t, k)
-    p_out, n_int = res[0], res[-1]
-    print(f"{family} run={run} k={k}: n={G.number_of_nodes()} "
-          f"m={G.number_of_edges()} s={s} t={t} outputs={p_out} "
-          f"intervals={n_int}")
-    for (key, _, bound), val in zip(STATS, res[1:5]):
-        print(f"    {key:>4} = {val:.4f}   [bound {bound}]")
-    return G, s, t
-
-
-# ------------------------------------------------------------
 # Workers -- instance construction verbatim, measurement swapped in
 # ------------------------------------------------------------
 
@@ -181,13 +86,13 @@ def replay(family, k, run):
 def worker_er(args):
     k, run = args
     G, s, t = base.make_erdos_renyi(run)
-    return measure_delays(G, s, t, k) + (run,)
+    return measure_delays_traced(G, s, t, k) + (run,)
 
 
 def worker_ws(args):
     k, run = args
     G, s, t = base.make_watts_strogatz(run)
-    return measure_delays(G, s, t, k) + (run,)
+    return measure_delays_traced(G, s, t, k) + (run,)
 
 
 # ------------------------------------------------------------
@@ -196,15 +101,6 @@ def worker_ws(args):
 
 
 def ignore_sigint():
-    """Pool initializer: let only the parent process see Ctrl+C.
-
-    Ctrl+C sends SIGINT to every process in the foreground group, so each
-    worker would otherwise print its own 'Process ForkPoolWorker-N:'
-    traceback -- one per core.  A try/except in the worker body cannot
-    suppress this: KeyboardInterrupt derives from BaseException, not from
-    Exception.  Workers still die promptly, since the pool's context
-    manager calls terminate() (SIGTERM, which is not ignored) on exit.
-    """
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
@@ -292,39 +188,43 @@ def main(runs=base.RUNS, processes=None):
                   f"{str(r.n_int):>10}")
 
 
-def clique_trap(leading_st_edge = True):
-    import networkx as nx
-    k = 5
-    for c in range(k+1, 1000, 100):
-        s = 0
-        t = c
-        G = nx.DiGraph()
-        if leading_st_edge:
-            G.add_edge(s, t)
-        else:
-            G.add_node(t)
-        for u in range(c):
-            for v in range(c):
-                if u != v: 
-                    G.add_edge(u, v)
-        n, m = G.number_of_nodes(), G.number_of_edges()
-        unit = (k + 1) * (n + m)                    
-        res = measure_delays(G, s, t, k)
-        Nck = k*c - k*(k+1)/2 + 1
-        # using float calcs in assert is dangerous, needs clean-up
-        if leading_st_edge:
-            assert res[1] == 4 / unit
-            assert res[3] == (c*Nck+c*c-1) / unit
-            print(res[3])
-        else:
-            assert res[1] == c*Nck / unit
-            print(res[1] / (k/(k+1)))
-
-
 if __name__ == "__main__":
-    clique_trap(False)
-    clique_trap(True)
     try:
         main()
     except KeyboardInterrupt:
         print("\ninterrupted.", flush=True)
+
+# 2026-08-04
+#
+# === Erdos-Renyi (n=6..30) ===
+#      n    d      p    k        outputs    wc0[1]     @run   wcIn[3]     @run    wcT[2]     @run    amP[2]     @run
+#   6-30    -   rand    3        402,585     0.480    23173     0.458    81995     0.557    38587     0.315    60115                                                                                                      
+#   6-30    -   rand    4      1,237,409     0.464    73017     0.474    84867     0.600    38587     0.310    30400                                                                                                      
+#   6-30    -   rand    5      3,602,698     0.467    90329     0.487    57468     0.637    30622     0.320    30622                                                                                                      
+#   6-30    -   rand    6     10,211,016     0.471    90329     0.516    77446     0.663    30622     0.333    30622                                                                                                      
+#   6-30    -   rand    7     28,598,970     0.472    90329     0.523    77446     0.658    30622     0.330    30622                                                                                                      
+#   6-30    -   rand    8     79,057,076     0.472    90329     0.517    53572     0.645    30622     0.330    10772                                                                                                      
+#   6-30    -   rand    9    214,472,635     0.471    90329     0.535    53572     0.623    30622     0.340    10772                                                                                                      
+#   6-30    -   rand   10    567,775,657     0.471    90329     0.526    53572     0.607    30622     0.335    10772                                                                                                      
+
+# === Watts-Strogatz (n=1000, d=6, p=0.2) ===
+#      n    d      p    k        outputs    wc0[1]     @run   wcIn[3]     @run    wcT[2]     @run    amP[2]     @run
+#   1000    6    0.2    3         18,754     0.065    87270     0.039    90447     0.053    39448     0.030    54399                                                                                                      
+#   1000    6    0.2    4         90,541     0.148    53117     0.096    27458     0.131    18150     0.077    18150                                                                                                      
+#   1000    6    0.2    5        431,964     0.264    53117     0.192    13495     0.217    41578     0.132    54010                                                                                                      
+#   1000    6    0.2    6      2,051,942     0.333    14412     0.242    18837     0.259    86159     0.180     1166                                                                                                      
+#   1000    6    0.2    7      9,718,746     0.365    83314     0.264    58526     0.230    57946     0.206    75649                                                                                                      
+#   1000    6    0.2    8     45,964,706     0.376    83037     0.260    58851     0.057    89302     0.200    61187                                                                                                      
+#   1000    6    0.2    9    217,177,858     0.340    51079     0.226    33099     0.045    89302     0.183    11796                                                                                                      
+#   1000    6    0.2   10  1,025,602,442     0.322    71590     0.274    11393     0.031    56736     0.161    71590                                                                                                      
+
+# === summary (max over all trials and all k, in units of (k+1)(n+m)) ===
+# family            stat  bound  measured  ratio  at k    at run  intervals
+# Erdos-Renyi        wc0      1     0.480  0.480     3     23173          2
+# Erdos-Renyi       wcIn      3     0.535  0.178     9     53572         36
+# Erdos-Renyi        wcT      2     0.663  0.331     6     30622          2
+# Erdos-Renyi        amP      2     0.340  0.170     9     10772        514
+# Watts-Strogatz     wc0      1     0.376  0.376     8     83037        228
+# Watts-Strogatz    wcIn      3     0.274  0.091    10     11393       4985
+# Watts-Strogatz     wcT      2     0.259  0.129     6     86159          2
+# Watts-Strogatz     amP      2     0.206  0.103     7     75649          2

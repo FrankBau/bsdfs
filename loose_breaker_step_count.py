@@ -159,6 +159,7 @@ def run(algo, k_max=200):
         # With n+m = 7k - 6 (count: n = 5k/2, m = 9k/2 - 6),
         # the ratio tends to (7/32)k³ / (7k³) = 1/32 = 0.03125
 
-# both give the same numbers
-run(bsdfs_loose)
-run(bsdfs_lazy)
+if __name__ == "__main__":
+    # both give the same numbers
+    run(bsdfs_loose)
+    run(bsdfs_lazy)

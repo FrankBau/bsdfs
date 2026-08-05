@@ -188,6 +188,7 @@ def run(algo, k_max=40):
         print(f"{k=:4} {n=:4} {m=:4}")
         paths = list(algo(G, s, t, k))
 
-run(bsdfs_tight)
-run(bsdfs_loose)
-run(bsdfs_lazy)
+if __name__ == "__main__":
+    run(bsdfs_tight)
+    run(bsdfs_loose)
+    run(bsdfs_lazy)

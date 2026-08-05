@@ -6,6 +6,7 @@ Companion to
     "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with $O(k(n+m))$ Delay Using Edge-Consistent Node Barriers"
 
 submitted to JGAA.
+Preprint: https://arxiv.org/abs/2607.14745
 
 
 # Simple s-t Path Enumeration
@@ -83,3 +84,58 @@ and its delay is unknown, as explained in our preprint.
 
 # Graph Family loose_breaker(k)
 Demonstrating that the O(k(n+m)) delay bound can be broken in the loose and lazy schemes.
+
+
+# Repository Layout
+
+## The algorithm and its variants
+
+| File | Scheme |
+| --- | --- |
+| `bsdfs.py` | **BS-DFS, the tight scheme** — the reference implementation |
+| `bsdfs_trivial.py` | trivial scheme: barriers stay 0, a depth-limited DFS; used as ground truth |
+| `bsdfs_loose.py` | loose scheme: barriers reset to 0 |
+| `bsdfs_lazy.py` | lazy scheme: barriers maintained via B sets |
+| `dfs.py` | plain depth-limited DFS, for reference |
+
+## Baselines from the literature
+
+| File | Algorithm |
+| --- | --- |
+| `bcdfs.py` | `BC-DFS` (Peng et al.), incomplete |
+| `bcdfs_kickstart.py` | `BC-DFS` plus the one-line *kick-start* repair |
+| `bcdfs_instrumented.py`, `bcdfs_kickstart_instrumented.py` | the same two, with probe and write counters |
+| `cycle_search.py` | `CYCLE_SEARCH` (Gupta and Suzumura), incomplete |
+
+Each algorithm module has a self-check; run it directly, for example
+
+```
+python bsdfs.py
+python bcdfs.py          # demonstrates the missed paths
+```
+
+## Experiments
+
+`experiments_base.py` holds the shared graph samplers (Erdős–Rényi and
+Watts–Strogatz, with the parameters and seeds used in the paper) and the
+shared `smoke()` self-check. The measurement scripts take no arguments:
+
+| File | Produces |
+| --- | --- |
+| `missed_paths_experiments.py` | the missed-path ratios |
+| `runtime_experiments.py` | the BS-DFS vs. BC-DFS runtime comparison |
+| `delay_bound_experiments.py` | the measured delay, in units of (k+1)(n+m) |
+| `instrumentation_experiments.py` | the BC-DFS vs. kick-start probe and write counts |
+| `loose_breaker_step_count.py`, `loose_breaker_x_assignments.py` | the loose/lazy delay-bound break |
+
+## Validation
+
+`validate_delay_bounds_v2/` checks the claims of the paper one by one against
+execution traces, each check naming the lemma, corollary, or theorem it
+exercises. See its `Readme.md`.
+
+## Other directories
+
+- `NetworkX/` — issues and patches contributed upstream
+- `other/` — reference implementations of related algorithms (Johnson, Tarjan, Tiernan)
+- `legacy/` — v1-era and exploratory code, kept for provenance; see its `README.md`

@@ -12,8 +12,7 @@ def bcdfs(G, s, t, k, stats=None):
     """
     if stats is None:
         stats = {}
-    for key in ("search_calls", "successors_considered",
-                "predecessors_considered", "bar_updates"):
+    for key in ("search_calls", "successors_considered", "predecessors_considered", "bar_updates"):
         stats.setdefault(key, 0)
 
     S = []

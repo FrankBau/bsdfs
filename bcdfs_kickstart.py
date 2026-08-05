@@ -1,5 +1,11 @@
 """
+BC-DFS with one line fix to achieve completeness.
+Used for estimating the extra cost of completeness
 
+The kick-start assignment makes the if condition 
+in the UpdateBarrier root call unconditionally true.
+
+This fix mimics the BS-DFS behaviour, but is closer to BC-DFS.
 """
 
 
@@ -44,21 +50,23 @@ def bcdfs(G, s, t, k):
     yield from search(s)
 
 
-import networkx as nx
-from bsdfs import bsdfs
-
-
 def main():
+    import networkx as nx
+
+    import experiments_base as base
+
+    # the instance BC-DFS is incomplete on (see bcdfs.py); kick-start
+    # recovers the missing path
     G = nx.parse_adjlist(
         ["a b c", "b c d e", "c b d", "d b", "e"], create_using=nx.DiGraph
     )
-
-    paths1 = list(bcdfs(G, s="a", t="e", k=4))
-    assert paths1 == [
+    assert list(bcdfs(G, s="a", t="e", k=4)) == [
         ["a", "b", "e"],
         ["a", "c", "b", "e"],
-        ['a', 'c', 'd', 'b', 'e']
+        ["a", "c", "d", "b", "e"],
     ]  # missing None
+
+    base.smoke(bcdfs)
 
 
 if __name__ == "__main__":
