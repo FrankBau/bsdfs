@@ -13,11 +13,21 @@ from matplotlib.colors import BoundaryNorm
 from bsdfs import bsdfs
 from bcdfs import bcdfs
 
+REPEATS = 5
 
-ISLICE = 100_000
-RUNS = 1_000
+import sys
+
+if any("pydevd" in m for m in sys.modules):
+    print("### debug mode - reduced data set, for preview only ###")
+    ISLICE = 10_000
+    RUNS = 100
+else:
+    ISLICE = 100_000
+    RUNS = 1_000
+print(f"{RUNS=} {ISLICE=} {REPEATS=}")
 
 K_VALUES = range(3, 11)
+
 
 def gen_er(run):
     rng = random.Random(42 + run)
@@ -39,20 +49,25 @@ def gen_ws(run):
     return G, s, t
 
 
-def get_runtime(G, s, t, k, algo, target=0.05):
-    repeats = 1
-    while True:
+def check_perf_counter_resolution():
+    try:
+        info = time.get_clock_info('perf_counter')
+        print(info)
+        if info.resolution > 1e-07:
+            print("### check_perf_counter_resolution: resolution may be insufficient ###")
+    except Exception as e:
+        print(f"Error retrieving clock info: {e}")
+
+
+def get_runtime(G, s, t, k, algo):
+    dt = []
+    for _ in range(REPEATS):
         gc.disable()
-        try:
-            tick = time.perf_counter()
-            for _ in range(repeats):
-                n_paths = sum(1 for _ in islice(algo(G, s, t, k), ISLICE))
-            dt = time.perf_counter() - tick
-        finally:
-            gc.enable()
-        if dt >= target:
-            return dt / repeats, n_paths
-        repeats = 4 * repeats + 1
+        tick = time.perf_counter()
+        n_paths = sum(1 for _ in islice(algo(G, s, t, k), ISLICE))
+        dt += [time.perf_counter() - tick]
+        gc.enable()
+    return min(dt), n_paths
 
 
 def print_totals(title, totals):
@@ -76,6 +91,9 @@ def make_ax(ax, title, graph_generator, relative=False):
         n, m = G.number_of_nodes(), G.number_of_edges()
         for k in K_VALUES:
             runtimeX, len_pathsX = get_runtime(G, s, t, k, bsdfs)
+            if len_pathsX >= ISLICE:
+                totals[k].update(truncated=1)
+                continue                          # skip before timing BC-DFS
             runtimeY, len_pathsY = get_runtime(G, s, t, k, bcdfs)
             intervalsX = 1 + len_pathsX
             intervalsY = 1 + len_pathsY
@@ -83,7 +101,7 @@ def make_ax(ax, title, graph_generator, relative=False):
             y = runtimeY / intervalsY if relative else runtimeY
             data[k].append((x, y/x))
             totals[k].update(n=1, t_bs=runtimeX, t_bc=runtimeY, out_bs=intervalsX, out_bc=intervalsY)
-            # print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {intervalsX=:10} {intervalsY=:10}   {runtimeX=:12.9f} runtimeY={y:12.9f}   {x=:12.9f} {y=:12.9f}")
+            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {intervalsX=:10} {intervalsY=:10}   {runtimeX=:12.9f} runtimeY={y:12.9f}")
 
 
     for i, k in enumerate(ks):
@@ -123,9 +141,27 @@ def make_figure(title, relative):
 
 
 def main():
-    make_figure("runtime (per interval)", True)
-    make_figure("runtime (absolute)", False)
+    check_perf_counter_resolution()
+    make_figure("runtime", relative=False)
+
+
+def estimate_overhead(graph_generator):
+    
+    from statistics import median, stdev
+    def null(G, s, t, k):
+        return []
+
+    timings = []
+    for run in range(RUNS):
+        G, s, t = graph_generator(run)
+        n, m = G.number_of_nodes(), G.number_of_edges()
+        for k in K_VALUES:
+            dt, n_paths = get_runtime(G, s, t, k, null)
+            timings += [dt]
+    print(f"estimate_overhead: {median(timings)=:12.9f} s; {stdev(timings)=:12.9f} s.")
+    return median(timings)
 
 
 if __name__ == "__main__":
+    estimate_overhead(gen_er)
     main()

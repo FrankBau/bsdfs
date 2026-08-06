@@ -10,9 +10,16 @@ from collections import Counter
 from bsdfs import bsdfs
 from bcdfs import bcdfs
 
+import sys
 
-ISLICE = 100_000
-RUNS = 1_000
+if any("pydevd" in m for m in sys.modules):
+    print("### debug mode - reduced data set, for preview only ###")
+    ISLICE = 10_000
+    RUNS = 100
+else:
+    ISLICE = 100_000
+    RUNS = 1_000
+print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
 
@@ -38,12 +45,14 @@ def gen_ws(run):
 
 
 def print_totals(title, totals):
-    print(f"\n--- {title}: totals ---")
-    print(f"{'k':>3} {'n':>6} {'BS paths':>12} {'BC paths':>12} {'missed':>8} {'worst':>8} {'lossy':>7}")
+    print(f"{'k':>3} {'n':>6} {'trunc':>6} {'BS paths':>12} {'BC paths':>12} {'missed':>8} {'worst':>8} {'lossy':>7}")
     for k in K_VALUES:
         c = totals[k]
-        print(f"{k:>3} {c['n']:6,} {c['bs']:12,} {c['bc']:12,}"
-                f" {100*(1-c['bc']/c['bs']):7.2f}% {c['worst']:8.3f} {100*c['lossy']/c['n']:6.1f}%")
+        if not c["n"]:
+            print(f"{k:>3} {0:6,} {c['truncated']:6,} -- all instances truncated --")
+            continue
+        print(f"{k:>3} {c['n']:6,} {c['truncated']:6,} {c['bs']:12,} {c['bc']:12,}"
+              f" {100*(1-c['bc']/c['bs']):7.2f}% {c['worst']:8.3f} {100*c['lossy']/c['n']:6.1f}%")      
 
 
 def make_ax(ax, title, graph_generator):
@@ -57,6 +66,9 @@ def make_ax(ax, title, graph_generator):
         n, m = G.number_of_nodes(), G.number_of_edges()
         for k in ks:
             paths1 = list(islice(bsdfs(G, s, t, k), ISLICE))
+            if len(paths1) >= ISLICE:
+                totals[k].update(truncated=1)
+                continue
             paths2 = list(islice(bcdfs(G, s, t, k), ISLICE))
             iv1 = len(paths1) + 1   # number of intervals
             iv2 = len(paths2) + 1   # number intervals
@@ -64,9 +76,11 @@ def make_ax(ax, title, graph_generator):
             x = iv1
             y = iv2 / iv1
             data[k].append((x, y))
-            totals[k].update(n=1, lossy=(iv2 < iv1), bs=iv1, bc=iv2)
+            totals[k].update(n=1, lossy=(iv2 < iv1), bs=iv1, bc=iv2, truncated=0)
 
     for i, k in enumerate(ks):
+        if not data[k]:
+            continue
         xs, ys = zip(*data[k])
         ax.scatter(xs, ys, s=4, alpha=0.5, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
 

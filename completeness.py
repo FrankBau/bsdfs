@@ -1,5 +1,23 @@
 """
-The extra cost of completeness
+The cost of replacing BC-DFS by BS-DFS
+
+Both algorithms are counted in the elementary-step model of the paper
+(sec:work-attribution), decomposed into three accounts:
+
+    scan     1 (call bookkeeping) + 1 per scanned successor
+    cascade  1 per firing barrier update + 1 per scanned predecessor
+    output   |path| <= k+1
+
+A non-firing UpdateBarrier costs nothing extra: examining it was already
+paid for by the caller's predecessor scan.
+
+The two algorithms differ in bookkeeping, and this is counted honestly:
+BC-DFS enters t as a search call and skips the successor loop at depth k;
+BS-DFS scans successors in every call and handles t inside the parent's
+scan.  These are differences in the algorithms, not in the measurement.
+
+Calibration: BS-DFS reproduces the exact step counts of lem:clique-trap,
+c*N_{c,k} for G_c and c*N_{c,k}+c^2-1 for the terminal interval of G_c^+.
 """
 
 import math
@@ -10,8 +28,16 @@ from itertools import islice
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 
-ISLICE = 100_000
-RUNS = 1_000
+import sys
+
+if any("pydevd" in m for m in sys.modules):
+    print("### debug mode - reduced data set, for preview only ###")
+    ISLICE = 10_000
+    RUNS = 100
+else:
+    ISLICE = 100_000
+    RUNS = 1_000
+print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
 
@@ -29,7 +55,9 @@ def bsdfs(G, s, t, k, steps):
         queue = deque([(v, sd)])
         while queue:
             q, d = queue.popleft()
+            steps["cascade"] += 1
             for p in G.predecessors(q):
+                steps["cascade"] += 1
                 if p not in S and b[p] > d + 1:
                     steps["drop"] += 1
                     b[p] = d + 1
@@ -38,10 +66,13 @@ def bsdfs(G, s, t, k, steps):
     def search(v):
         S.append(v)
         h = len(S) - 1
+        steps["scan"] += 1
         sd = k + 1
         for w in G.successors(v):
+            steps["scan"] += 1
             if b[w] + h < k:
                 if w == t:
+                    steps["output"] += h + 2
                     yield S + [t]
                     sd = 1
                 elif w not in S:
@@ -71,22 +102,27 @@ def bcdfs(G, s, t, k, steps):
 
     def UpdateBarrier(u, l, root_call=False):
         if bar[u] > l:
+            steps["cascade"] += 1
             steps["root" if root_call else "drop"] += 1
             bar[u] = l
             for v in G.predecessors(u):
+                steps["cascade"] += 1
                 if v not in S:
                     UpdateBarrier(v, l + 1)
 
     def search(u):
         F = k + 1
         S.append(u)
+        steps["scan"] += 1
         if u == t:
+            steps["output"] += len(S)
             yield S.copy()
             S.pop()
             F = 0
             return F
         elif length(S) < k:
             for v in G.successors(u):
+                steps["scan"] += 1
                 if v not in S:
                     if length(S) + 1 + bar[v] <= k:
                         f = yield from search(v)
@@ -102,8 +138,15 @@ def bcdfs(G, s, t, k, steps):
         return F
 
     yield from search(s)
-    
-    
+
+
+ACCOUNTS = ("scan", "cascade", "output")
+
+
+def total_steps(steps):
+    return sum(steps[a] for a in ACCOUNTS)
+
+
 def gen_er(run):
     rng = random.Random(42 + run)
     n = rng.randint(6, 30)
@@ -125,17 +168,20 @@ def gen_ws(run):
 
 
 def print_totals(title, totals):
-    print(f"\n--- {title} ---")
-    print(f"{'k':>3} {'n':>6} {'BS origin':>12} {'BC origin':>12} {'ratio':>8}"
-          f" {'BC fruitful':>12} {'fired':>7} {'y=0':>7}")
+    print(f"\n--- {title}: elementary steps, BC-DFS relative to BS-DFS ---")
+    print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bc/bs':>7}"
+          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7}")
     for k in K_VALUES:
         c = totals[k]
-        if not c["n"] or not c["bs_origin"] or not c["bc_fruitful"]:
-            print(f"{k:>3} {c['n']:6,} -- no fruitful calls --")
+        if not c["n"] or not c["bs_total"]:
+            print(f"{k:>3} {c['n']:6,} -- no work recorded --")
             continue
-        print(f"{k:>3} {c['n']:6,} {c['bs_origin']:12,} {c['bc_origin']:12,}"
-              f" {c['bc_origin']/c['bs_origin']:8.4f} {c['bc_fruitful']:12,}"
-              f" {c['bc_origin']/c['bc_fruitful']:7.4f} {100*c['zeros']/c['n']:6.1f}%")
+        rat = lambda a: c[f"bc_{a}"] / c[f"bs_{a}"] if c[f"bs_{a}"] else float("nan")
+        fired = c["bc_root"] / c["bc_fruitful"] if c["bc_fruitful"] else float("nan")
+        print(f"{k:>3} {c['n']:6,} {c['bs_total']:14,} {c['bc_total']:14,}"
+              f" {c['bc_total']/c['bs_total']:7.3f}"
+              f" {rat('scan'):7.3f} {rat('cascade'):8.3f} {rat('output'):7.3f}"
+              f" {c['worst']:7.3f} {fired:7.4f}")
 
 
 def make_ax(ax, title, graph_generator):
@@ -151,38 +197,40 @@ def make_ax(ax, title, graph_generator):
         for k in ks:
             steps1 = defaultdict(int)
             paths1 = list(islice(bsdfs(G, s, t, k, steps1), ISLICE))
+            if len(paths1) >= ISLICE:              # truncated: excluded
+                totals[k].update(truncated=1)
+                continue
             steps2 = defaultdict(int)
-            paths2 = list(islice(bcdfs(G, s, t, k, steps2), ISLICE))
-            print(f"{run=:8} {n=:4} {m=:4} {k=:4} {steps1["fruitful"]=:8} {steps1["drop"]=:8} {steps1["raise"]=:8}   {steps2["fruitful"]=:8} {steps2["root"]=:8} {steps2["drop"]=:8} {steps2["raise"]=:8}")
-            x = steps1["fruitful"]
-            if x==0:
-                assert steps2["root"]==0
-                y = 0
-            else:
-                y = steps2["root"] / x
-            data[k].append((x, y))
-            totals[k].update(n=1, zeros=(steps2["root"] == 0),
-                             bs_origin=x, bs_drop=steps1["drop"], bs_raise=steps1["raise"],
-                             bc_origin=steps2["root"], bc_drop=steps2["drop"],
-                             bc_raise=steps2["raise"], bc_fruitful=steps2["fruitful"])
+            list(islice(bcdfs(G, s, t, k, steps2), ISLICE))
+            x, xc = total_steps(steps1), total_steps(steps2)
+            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   bs_steps={x:10} bc_steps={xc:10}"
+                  f"   bs_scan={steps1['scan']:9} bs_casc={steps1['cascade']:9} bs_out={steps1['output']:9}"
+                  f"   bc_scan={steps2['scan']:9} bc_casc={steps2['cascade']:9} bc_out={steps2['output']:9}")
+            data[k].append((x, xc / x))
+            totals[k].update(n=1, bs_total=x, bc_total=xc,
+                             bc_fruitful=steps2["fruitful"], bc_root=steps2["root"],
+                             **{f"bs_{a}": steps1[a] for a in ACCOUNTS},
+                             **{f"bc_{a}": steps2[a] for a in ACCOUNTS})
 
     for i, k in enumerate(ks):
+        if not data[k]:
+            continue
         xs, ys = zip(*data[k])
         ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
+        totals[k]["worst"] = max(ys)
 
     ax.set_xscale("log")
-    ax.set_xlim(1, 1.1e5)
-    ax.set_xlabel("BS-DFS origin writes")
-    ax.set_yscale("symlog", linthresh=1e-5)
+    ax.set_xlabel("BS-DFS elementary steps")
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
+    ax.axhline(1, color="gray", lw=1, ls="--", zorder=0)
 
     return totals
 
 
 def main():
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
-    axes[0].set_ylabel("BC-DFS origin writes (fraction)")
+    axes[0].set_ylabel("step ratio BC-DFS / BS-DFS")
     totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
     totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 

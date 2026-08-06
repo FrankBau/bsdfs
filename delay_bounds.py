@@ -8,8 +8,16 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 
 
-ISLICE = 100_000
-RUNS = 1_000
+import sys
+
+if any("pydevd" in m for m in sys.modules):
+    print("### debug mode - reduced data set, for preview only ###")
+    ISLICE = 10_000
+    RUNS = 100
+else:
+    ISLICE = 100_000
+    RUNS = 1_000
+print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
 
@@ -98,7 +106,7 @@ def make_ax(ax, title, graph_generator):
             x = len(delays)                     # intervals = outputs + 1
             y = max(delays) / ((k+1)*(n+m))
             data[k].append((x, y))
-            # print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {(k+1)*(n+m)=:10} {max(delays)=:10} {len(delays)=:10}   {x=:10} {y=:6.4f}")
+            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {(k+1)*(n+m)=:10} {max(delays)=:10} {len(delays)=:10}   {x=:10} {y=:6.4f}")
 
     for i, k in enumerate(ks):
         xs, ys = zip(*data[k])
@@ -106,6 +114,11 @@ def make_ax(ax, title, graph_generator):
 
     ax.set_xscale("log")
     ax.set_xlabel("number of intervals")
+    ax.set_yscale("log")
+    ax.set_ylim(None, 4)
+    ax.axhline(1, color="gray", lw=1, ls=":")
+    ax.axhline(2, color="gray", lw=1, ls="-.")
+    ax.axhline(3, color="gray", lw=1, ls="--")
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
 
