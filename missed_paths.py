@@ -1,5 +1,6 @@
 import math
 import random
+from matplotlib.ticker import PercentFormatter
 import networkx as nx
 import numpy as np
 from itertools import islice
@@ -22,6 +23,7 @@ else:
 print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
+CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
 
 
 def gen_er(run):
@@ -45,6 +47,7 @@ def gen_ws(run):
 
 
 def print_totals(title, totals):
+    print(f"\n--- {title}: totals ---")
     print(f"{'k':>3} {'n':>6} {'trunc':>6} {'BS paths':>12} {'BC paths':>12} {'missed':>8} {'worst':>8} {'lossy':>7}")
     for k in K_VALUES:
         c = totals[k]
@@ -52,11 +55,10 @@ def print_totals(title, totals):
             print(f"{k:>3} {0:6,} {c['truncated']:6,} -- all instances truncated --")
             continue
         print(f"{k:>3} {c['n']:6,} {c['truncated']:6,} {c['bs']:12,} {c['bc']:12,}"
-              f" {100*(1-c['bc']/c['bs']):7.2f}% {c['worst']:8.3f} {100*c['lossy']/c['n']:6.1f}%")      
+            f" {100*(1-c['bc']/c['bs']):7.2f}% {100*c['worst']:7.2f}% {100*c['lossy']/c['n']:6.1f}%")
 
 
 def make_ax(ax, title, graph_generator):
-    cmap = plt.get_cmap("plasma")
     ks = list(K_VALUES)
 
     data = {k: [] for k in K_VALUES}
@@ -70,48 +72,54 @@ def make_ax(ax, title, graph_generator):
                 totals[k].update(truncated=1)
                 continue
             paths2 = list(islice(bcdfs(G, s, t, k), ISLICE))
-            iv1 = len(paths1) + 1   # number of intervals
-            iv2 = len(paths2) + 1   # number intervals
+            p1 = len(paths1)   # number of paths
+            p2 = len(paths2)   # number paths
             print(f"{run=:8} {n=:4} {m=:4} {k=:4} {len(paths1)=:10} {len(paths2)=:10}")
-            x = iv1
-            y = iv2 / iv1
+            if p1 == 0:
+                assert p2 == 0
+                x = 0
+                y = 0
+            else:
+                x = p1
+                y = 1 - p2 / p1
             data[k].append((x, y))
-            totals[k].update(n=1, lossy=(iv2 < iv1), bs=iv1, bc=iv2, truncated=0)
+            totals[k].update(n=1, lossy=(p2 < p1), bs=p1, bc=p2, truncated=0)
 
     for i, k in enumerate(ks):
         if not data[k]:
             continue
         xs, ys = zip(*data[k])
-        ax.scatter(xs, ys, s=4, alpha=0.5, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
+        ax.scatter(xs, ys, s=4, alpha=0.5, lw=0, color=CMAP(i), label=f"k={k}")
 
-    ax.set_xscale("log")
-    ax.set_xlim(1, 1.5e5)
-    ax.set_xlabel("BS-DFS intervals")
-    ax.set_ylim(0, 1.1)
+    ax.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+    ax.set_xscale("symlog", linthresh=1)
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
     ax.axhline(1, color="lightgray", lw=1, ls="--")
 
     for k in ks:
         if data[k]:
-            totals[k]["worst"] = min(y for _, y in data[k])
+            totals[k]["worst"] = max(y for _, y in data[k])
     return totals
 
 
 def main():
-    fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), constrained_layout=True)
-    axes[0].set_ylabel("BC-DFS intervals (fraction)")
+    plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
+    fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
+
+    fig.supxlabel("BS-DFS number of paths")
+    axes[0].set_ylabel("BC-DFS missed paths")
+
     totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
     totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
-    cmap = plt.get_cmap("plasma", len(K_VALUES))
-    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), cmap.N)
+    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm); sm.set_array([])
     cb = fig.colorbar(sm, ax=axes, ticks=K_VALUES, pad=.02, fraction=.035)
     cb.set_label("hop bound $k$")
 
-    fig.savefig("incompleteness.pdf", bbox_inches="tight")
+    fig.savefig("missed_paths.pdf", bbox_inches="tight")
 
 
     print_totals("Erdős–Rényi", totals_er)

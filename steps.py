@@ -27,6 +27,7 @@ import numpy as np
 from itertools import islice
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
+from collections import Counter, deque, defaultdict
 
 import sys
 
@@ -40,9 +41,7 @@ else:
 print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
-
-
-from collections import Counter, deque, defaultdict
+CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
 
 
 def bsdfs(G, s, t, k, steps):
@@ -170,7 +169,7 @@ def gen_ws(run):
 def print_totals(title, totals):
     print(f"\n--- {title}: elementary steps, BC-DFS relative to BS-DFS ---")
     print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bc/bs':>7}"
-          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7}")
+          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7} {'per-int':>7}")
     for k in K_VALUES:
         c = totals[k]
         if not c["n"] or not c["bs_total"]:
@@ -178,14 +177,14 @@ def print_totals(title, totals):
             continue
         rat = lambda a: c[f"bc_{a}"] / c[f"bs_{a}"] if c[f"bs_{a}"] else float("nan")
         fired = c["bc_root"] / c["bc_fruitful"] if c["bc_fruitful"] else float("nan")
+        per = (c["bc_total"]/c["bc_int"]) / (c["bs_total"]/c["bs_int"]) # steps per interval for each algorithm, then their ratio
         print(f"{k:>3} {c['n']:6,} {c['bs_total']:14,} {c['bc_total']:14,}"
               f" {c['bc_total']/c['bs_total']:7.3f}"
               f" {rat('scan'):7.3f} {rat('cascade'):8.3f} {rat('output'):7.3f}"
-              f" {c['worst']:7.3f} {fired:7.4f}")
+              f" {c['worst']:7.3f} {fired:7.4f} {per:7.3f}")
 
 
 def make_ax(ax, title, graph_generator):
-    cmap = plt.get_cmap("plasma")
     ks = list(K_VALUES)
 
     data = {k: [] for k in K_VALUES}
@@ -201,13 +200,19 @@ def make_ax(ax, title, graph_generator):
                 totals[k].update(truncated=1)
                 continue
             steps2 = defaultdict(int)
-            list(islice(bcdfs(G, s, t, k, steps2), ISLICE))
-            x, xc = total_steps(steps1), total_steps(steps2)
-            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   bs_steps={x:10} bc_steps={xc:10}"
+            paths2 = list(islice(bcdfs(G, s, t, k, steps2), ISLICE))
+            iv1 = 1 + len(paths1)   # intervals
+            iv2 = 1 + len(paths2)   # intervals
+            s1 = total_steps(steps1)
+            s2 = total_steps(steps2)
+            x = s1 / iv1
+            y = s2 / iv2
+            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   bs_steps={x:10.2f} bc_steps={y:10.2f}"
                   f"   bs_scan={steps1['scan']:9} bs_casc={steps1['cascade']:9} bs_out={steps1['output']:9}"
                   f"   bc_scan={steps2['scan']:9} bc_casc={steps2['cascade']:9} bc_out={steps2['output']:9}")
-            data[k].append((x, xc / x))
-            totals[k].update(n=1, bs_total=x, bc_total=xc,
+            data[k].append((y, x / y))
+            totals[k].update(n=1, bs_total=s1, bc_total=s2,
+                             bs_int=iv1, bc_int=iv2,
                              bc_fruitful=steps2["fruitful"], bc_root=steps2["root"],
                              **{f"bs_{a}": steps1[a] for a in ACCOUNTS},
                              **{f"bc_{a}": steps2[a] for a in ACCOUNTS})
@@ -216,11 +221,10 @@ def make_ax(ax, title, graph_generator):
         if not data[k]:
             continue
         xs, ys = zip(*data[k])
-        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
+        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=CMAP(i), label=f"k={k}")
         totals[k]["worst"] = max(ys)
 
     ax.set_xscale("log")
-    ax.set_xlabel("BS-DFS elementary steps")
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
     ax.axhline(1, color="gray", lw=1, ls="--", zorder=0)
@@ -229,19 +233,22 @@ def make_ax(ax, title, graph_generator):
 
 
 def main():
+    plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
-    axes[0].set_ylabel("step ratio BC-DFS / BS-DFS")
+
+    fig.supxlabel("BC-DFS elementary steps per interval")
+    axes[0].set_ylabel("step ratio BS-DFS / BC-DFS")
+
     totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
     totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
-    cmap = plt.get_cmap("plasma", len(K_VALUES))
-    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), cmap.N)
+    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm); sm.set_array([])
     cb = fig.colorbar(sm, ax=axes, ticks=K_VALUES, pad=.02, fraction=.035)
     cb.set_label("hop bound $k$")
 
-    fig.savefig("completeness.pdf", bbox_inches="tight")
+    fig.savefig("steps.pdf", bbox_inches="tight")
 
     print_totals("Erdős–Rényi", totals_er)
     print_totals("Watts–Strogatz", totals_ws)

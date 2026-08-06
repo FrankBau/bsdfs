@@ -10,7 +10,7 @@
 PYTHON  ?= python3
 PYFLAGS ?= -u -OO
 
-EXPERIMENTS = incompleteness delay_bounds completeness runtime
+EXPERIMENTS = missed_paths steps runtime delay_bounds
 PDFS = $(addsuffix .pdf,$(EXPERIMENTS))
 
 export PYTHONIOENCODING = utf-8

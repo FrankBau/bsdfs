@@ -27,6 +27,7 @@ else:
 print(f"{RUNS=} {ISLICE=} {REPEATS=}")
 
 K_VALUES = range(3, 11)
+CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
 
 
 def gen_er(run):
@@ -59,6 +60,7 @@ def check_perf_counter_resolution():
         print(f"Error retrieving clock info: {e}")
 
 
+# could be made more robust by decorrelating the runs over time
 def get_runtime(G, s, t, k, algo):
     dt = []
     for _ in range(REPEATS):
@@ -80,8 +82,7 @@ def print_totals(title, totals):
         print(f"{k:>3} {c['n']:6,} {tot:12.3f} {per:11.3f} {c['median']:13.3f}")
 
 
-def make_ax(ax, title, graph_generator, relative=False):
-    cmap = plt.get_cmap("plasma")
+def make_ax(ax, title, graph_generator):
     ks = list(K_VALUES)
 
     data = {k: [] for k in K_VALUES}
@@ -90,26 +91,25 @@ def make_ax(ax, title, graph_generator, relative=False):
         G, s, t = graph_generator(run)
         n, m = G.number_of_nodes(), G.number_of_edges()
         for k in K_VALUES:
-            runtimeX, len_pathsX = get_runtime(G, s, t, k, bsdfs)
-            if len_pathsX >= ISLICE:
+            runtime1, len_paths1 = get_runtime(G, s, t, k, bsdfs)
+            if len_paths1 >= ISLICE:
                 totals[k].update(truncated=1)
                 continue                          # skip before timing BC-DFS
-            runtimeY, len_pathsY = get_runtime(G, s, t, k, bcdfs)
-            intervalsX = 1 + len_pathsX
-            intervalsY = 1 + len_pathsY
-            x = runtimeX / intervalsX if relative else runtimeX
-            y = runtimeY / intervalsY if relative else runtimeY
+            runtime2, len_paths2 = get_runtime(G, s, t, k, bcdfs)
+            intervals1 = 1 + len_paths1
+            intervals2 = 1 + len_paths2
+            x = runtime2 / intervals2
+            y = runtime1 / intervals1
             data[k].append((x, y/x))
-            totals[k].update(n=1, t_bs=runtimeX, t_bc=runtimeY, out_bs=intervalsX, out_bc=intervalsY)
-            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {intervalsX=:10} {intervalsY=:10}   {runtimeX=:12.9f} runtimeY={y:12.9f}")
+            totals[k].update(n=1, t_bs=runtime1, t_bc=runtime2, out_bs=intervals1, out_bc=intervals2)
+            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {intervals1=:10} {intervals2=:10}   {runtime1=:12.9f} {runtime2=:12.9f}")
 
 
     for i, k in enumerate(ks):
         xs, ys = zip(*data[k])
-        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
+        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=CMAP(i), label=f"k={k}")
 
     ax.set_xscale("log")
-    ax.set_xlabel("BS-DFS runtime per interval" if relative else "BS-DFS runtime (absolute)")
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
     ax.axhline(1, color="lightgray", lw=1, ls="--")
@@ -120,21 +120,23 @@ def make_ax(ax, title, graph_generator, relative=False):
     return totals
 
 
-def make_figure(title, relative):
+def make_figure():
+    plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
-    axes[0].set_ylabel("runtime ratio BC-DFS / BS-DFS")
+    
+    fig.supxlabel("BC-DFS runtime per interval [s]")
+    axes[0].set_ylabel("runtime ratio BS-DFS / BC-DFS")
+    
+    totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
+    totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
-    totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er, relative=relative)
-    totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws, relative=relative)
+    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
-    cmap = plt.get_cmap("plasma", len(K_VALUES))
-    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), cmap.N)
-
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm); sm.set_array([])
     cb = fig.colorbar(sm, ax=axes, ticks=K_VALUES, pad=.02, fraction=.035)
     cb.set_label("hop bound $k$")
 
-    fig.savefig(f"{title}.pdf", bbox_inches="tight")
+    fig.savefig(f"runtime.pdf", bbox_inches="tight")
 
     print_totals("Erdős–Rényi", totals_er)
     print_totals("Watts–Strogatz", totals_ws)
@@ -142,11 +144,12 @@ def make_figure(title, relative):
 
 def main():
     check_perf_counter_resolution()
-    make_figure("runtime", relative=False)
+    estimate_overhead(gen_er)
+    make_figure()
 
 
 def estimate_overhead(graph_generator):
-    
+
     from statistics import median, stdev
     def null(G, s, t, k):
         return []
@@ -163,5 +166,4 @@ def estimate_overhead(graph_generator):
 
 
 if __name__ == "__main__":
-    estimate_overhead(gen_er)
     main()

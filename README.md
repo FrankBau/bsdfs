@@ -116,12 +116,12 @@ python bcdfs.py          # demonstrates the missed paths
 
 ## Experiments
 
-`experiments.bat`
+`> make experiments` runs the experiments makes the diagrams (`.pdf`) for the paper. The logs go into the `.txt` files.
 
 | File | Produces |
 | --- | --- |
-| `incompleteness.py` | the missed-path BC-DFS / BS-DFS ratios |
-| `completeness.py` | the BS-DFS vs. BC-DFS step comparison |
+| `missed_paths.py` | the missed-path BC-DFS / BS-DFS ratios |
+| `steps.py` | the BS-DFS vs. BC-DFS step comparison |
 | `runtime.py` | the BC-DFS vs. BS-DFS runtime comparison |
 | `delay_bounds.py` | the measured delay, in units of (k+1)(n+m) |
 | `loose_breaker_step_count.py`, `loose_breaker_x_assignments.py` | the loose/lazy delay-bound break |

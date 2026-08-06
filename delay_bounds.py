@@ -20,6 +20,7 @@ else:
 print(f"{RUNS=} {ISLICE=}")
 
 K_VALUES = range(3, 11)
+CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
 
 
 def bsdfs_delays(G, s, t, k):
@@ -92,7 +93,6 @@ def gen_ws(run):
 
 
 def make_ax(ax, title, graph_generator):
-    cmap = plt.get_cmap("plasma")
     ks = list(K_VALUES)
 
     data = {k: [] for k in K_VALUES}
@@ -110,12 +110,11 @@ def make_ax(ax, title, graph_generator):
 
     for i, k in enumerate(ks):
         xs, ys = zip(*data[k])
-        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=cmap(i / (len(ks) - 1)), label=f"k={k}")
+        ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=CMAP(i), label=f"k={k}")
 
     ax.set_xscale("log")
-    ax.set_xlabel("number of intervals")
     ax.set_yscale("log")
-    ax.set_ylim(None, 4)
+
     ax.axhline(1, color="gray", lw=1, ls=":")
     ax.axhline(2, color="gray", lw=1, ls="-.")
     ax.axhline(3, color="gray", lw=1, ls="--")
@@ -123,28 +122,32 @@ def make_ax(ax, title, graph_generator):
     ax.grid(True, alpha=0.3)
 
     maxima = {k: max(y for _, y in data[k]) for k in ks if data[k]}
-    return maxima
+    samples = {k: len(data[k]) for k in ks}
+    return maxima, samples
 
 
 def main():
+    plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
+
+    fig.supxlabel("BS-DFS number of intervals")
     axes[0].set_ylabel("max. delay / (k+1)(n+m)")
-    maxima_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
-    maxima_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
-    cmap = plt.get_cmap("plasma", len(K_VALUES))
-    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), cmap.N)
+    maxima_er, n_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
+    maxima_ws, n_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
+    norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
+
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm); sm.set_array([])
     cb = fig.colorbar(sm, ax=axes, ticks=K_VALUES, pad=.02, fraction=.035)
     cb.set_label("hop bound $k$")
 
     fig.savefig("delay_bounds.pdf", bbox_inches="tight")
 
-    print(f"\n{'k':>3} {'max ER':>10} {'max WS':>10}")
+    print(f"\n{'k':>3}   {'n ER':>6} {'max ER':>10}   {'n WS':>6} {'max WS':>10}")
     for k in K_VALUES:
-        print(f"{k:>3} {maxima_er.get(k, float('nan')):10.4f} {maxima_ws.get(k, float('nan')):10.4f}")
-    print(f"{'all':>3} {max(maxima_er.values()):10.4f} {max(maxima_ws.values()):10.4f}")
+        print(f"{k:>3}   {n_er.get(k, float('nan')):6} {maxima_er.get(k, float('nan')):10.4f}   {n_ws.get(k, float('nan')):6} {maxima_ws.get(k, float('nan')):10.4f}")
+    print(f"{'all':>3} {max(maxima_er.values()):19.4f} {max(maxima_ws.values()):19.4f}")
 
 
 if __name__ == "__main__":
