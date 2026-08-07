@@ -27,6 +27,7 @@ import numpy as np
 from itertools import islice
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
+from matplotlib.ticker import PercentFormatter
 from collections import Counter, deque, defaultdict
 
 import sys
@@ -169,7 +170,7 @@ def gen_ws(run):
 def print_totals(title, totals):
     print(f"\n--- {title}: elementary steps, BS-DFS relative to BC-DFS ---")
     print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bs/bc':>7}"
-          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7}")
+          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7} {'per-int':>7}")
     for k in K_VALUES:
         c = totals[k]
         if not c["n"] or not c["bs_total"]:
@@ -177,7 +178,7 @@ def print_totals(title, totals):
             continue
         rat = lambda a: c[f"bs_{a}"] / c[f"bc_{a}"] if c[f"bc_{a}"] else float("nan")
         fired = c["bc_root"] / c["bc_fruitful"] if c["bc_fruitful"] else float("nan")
-        per = (c["bc_total"]/c["bc_int"]) / (c["bs_total"]/c["bs_int"]) # steps per interval for each algorithm, then their ratio
+        per = (c["bs_total"]/c["bs_int"]) / (c["bc_total"]/c["bc_int"])
         print(f"{k:>3} {c['n']:6,} {c['bs_total']:14,} {c['bc_total']:14,}"
               f" {c['bs_total']/c['bc_total']:7.3f}"
               f" {rat('scan'):7.3f} {rat('cascade'):8.3f} {rat('output'):7.3f}"
@@ -232,6 +233,23 @@ def make_ax(ax, title, graph_generator):
     return totals
 
 
+def make_bars(ax, title, totals):
+    ks = list(K_VALUES)
+    bottom_pos = np.zeros(len(ks)); bottom_neg = np.zeros(len(ks))
+    for a, colour in zip(ACCOUNTS, (CMAP(2), CMAP(4), CMAP(6))):
+        v = np.array([(totals[k][f"bs_{a}"] - totals[k][f"bc_{a}"]) / totals[k]["bc_total"]for k in ks])
+        pos, neg = np.clip(v, 0, None), np.clip(v, None, 0)
+        ax.bar(ks, pos, bottom=bottom_pos, color=colour, label=a, width=.7)
+        ax.bar(ks, neg, bottom=bottom_neg, color=colour, width=.7)
+        bottom_pos += pos; bottom_neg += neg
+    ax.plot(ks, [totals[k]["bs_total"]/totals[k]["bc_total"] - 1 for k in ks], ".-", lw=.8, ms=4, color=CMAP(0), label="total excess")
+    ax.axhline(0, color="gray", lw=.8)
+    ax.set_xlabel("hop bound $k$"); ax.set_title(title)
+    ax.set_xticks(K_VALUES)
+    ax.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+    ax.set_ylim(-0.2, 2.0) # hand tuned
+
+
 def main():
     plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
@@ -242,6 +260,12 @@ def main():
     totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
     totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
 
+    fig_bars, axes_bars = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
+    make_bars(axes_bars[0], "Erdős–Rényi", totals_er)
+    make_bars(axes_bars[1], "Watts–Strogatz", totals_ws)
+    axes_bars[0].legend(fontsize=7, frameon=False, loc="upper center", ncol=2)
+    axes_bars[0].set_ylabel("BS-DFS excess steps, rel. BC-DFS")
+
     norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
     sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm); sm.set_array([])
@@ -249,6 +273,7 @@ def main():
     cb.set_label("hop bound $k$")
 
     fig.savefig("steps.pdf", bbox_inches="tight")
+    fig_bars.savefig("steps_bars.pdf", bbox_inches="tight")
 
     print_totals("Erdős–Rényi", totals_er)
     print_totals("Watts–Strogatz", totals_ws)
