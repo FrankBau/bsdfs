@@ -11,11 +11,11 @@ Preprint: https://arxiv.org/abs/2607.14745
 
 # Simple s-t Path Enumeration
 
-`bsdsf(G, s, t, k)` enumerates all length $k$ bounded simple paths 
+`bsdfs(G, s, t, k)` enumerates all length $k$ bounded simple paths 
 from node $s$ to node $t$ in the directed graph $G$. 
 The delay is $O(k(n+m))$ per output with small constants.
 
-It can replace `BC-DFS` which has issues, see the upcoming paper.
+It can replace `BC-DFS` which has issues, see the preprint and upcoming paper.
 
 The original `BC-DFS` algorithm was translated from
 
@@ -56,7 +56,7 @@ and its delay is unknown, as explained in our paper.
 
 # Simple s-Cycle Enumeration
 
-`bsdsf(G, s, s, k)` enumerates all length $k$ bounded simple cycles 
+`bsdfs(G, s, s, k)` enumerates all length $k$ bounded simple cycles 
 containing node $s$ in the directed graph $G$.
 The delay is $O(k(n+m))$ per output with small constants.
 
