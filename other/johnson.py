@@ -132,7 +132,6 @@ def johnson_paths(G, s, t):
 
 import networkx as nx
 import random
-import dfs
 from multiprocessing import Pool
 from tqdm import tqdm
 from itertools import islice
@@ -150,7 +149,7 @@ def worker_er(args):
     # we cutoff when a number of paths was generated
     paths1 = list(islice(johnson_paths_k(G, s, t, k), 500))
     assert paths1 == sorted(paths1)  # lexicographic order
-    paths2 = list(islice(dfs.all_simple_paths(G, s, t, k), 500))
+    paths2 = list(islice(nx.all_simple_paths(G, s, t, k), 500))
     assert paths2 == sorted(paths2)  # lexicographic order
     if paths1 != paths2:
         ps1 = set(map(tuple, paths1))

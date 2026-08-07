@@ -162,7 +162,6 @@ def johnson_paths(G, s, t):
 
 
 import networkx as nx
-import dfs_paths
 from multiprocessing import Pool
 from tqdm import tqdm
 from itertools import permutations
@@ -208,7 +207,7 @@ def worker(args):
     total = 0
     G = build_graph_from_mask(n, mask)
     paths1 = list(johnson_paths(G, s, t))
-    paths2 = list(dfs_paths.all_simple_paths(G, s, t, k))
+    paths2 = list(nx.all_simple_paths(G, s, t, k))
     assert sorted(paths1) == sorted(paths2)
     total += len(paths1)
     return total
@@ -258,7 +257,7 @@ def worker_er(args):
     s, t = random.sample(range(n), 2)
     
     paths1 = list(johnson_paths(G, s, t))
-    paths2 = list(dfs_paths.all_simple_paths(G, s, t))
+    paths2 = list(nx.all_simple_paths(G, s, t))
     assert sorted(paths1) == sorted(paths2), f"{s=} {t=} {G.edges=} "
     return len(paths1)
 

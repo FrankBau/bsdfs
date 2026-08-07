@@ -36,7 +36,7 @@ $(EXPERIMENTS): %: %.pdf
 	@echo "=== $* finished $$(date -Is) -- $$(tail -1 $*.txt)"
 
 # only these two import the reference implementations
-incompleteness.pdf runtime.pdf: bsdfs.py bcdfs.py
+missed_paths.pdf runtime.pdf: bsdfs.py bcdfs.py
 
 clean:
 	rm -rf __pycache__

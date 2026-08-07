@@ -1,3 +1,6 @@
+""" Experiment accompanying the paper, generates log and .pdf figure"""
+
+
 from collections import Counter
 import gc
 import math

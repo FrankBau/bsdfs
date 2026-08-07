@@ -75,8 +75,8 @@ def bcdfs(G, s, t, k):
     yield from search(s)
     print_trace()
 
+
 import networkx as nx
-from bsdfs import bsdfs
 
 
 def main():

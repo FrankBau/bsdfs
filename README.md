@@ -93,19 +93,25 @@ Demonstrating that the O(k(n+m)) delay bound can be broken in the loose and lazy
 | File | Scheme |
 | --- | --- |
 | `bsdfs.py` | **BS-DFS, the tight scheme** — the reference implementation |
-| `bsdfs_trivial.py` | trivial scheme: barriers stay 0, a depth-limited DFS; used as ground truth |
+| `bsdfs_trivial.py` | trivial scheme: barriers stay 0, a depth-limited DFS |
 | `bsdfs_loose.py` | loose scheme: barriers reset to 0 |
 | `bsdfs_lazy.py` | lazy scheme: barriers maintained via B sets |
-| `dfs.py` | plain depth-limited DFS, for reference |
+| `dfs.py` | plain depth-limited DFS; the ground truth of the self-checks |
 
 ## Baselines from the literature
 
 | File | Algorithm |
 | --- | --- |
 | `bcdfs.py` | `BC-DFS` (Peng et al.), incomplete |
-| `bcdfs_kickstart.py` | `BC-DFS` plus the one-line *kick-start* repair |
-| `bcdfs_instrumented.py`, `bcdfs_kickstart_instrumented.py` | the same two, with probe and write counters |
 | `cycle_search.py` | `CYCLE_SEARCH` (Gupta and Suzumura), incomplete |
+
+## Traces
+
+| File | Purpose |
+| --- | --- |
+| `bsdfs_traced.py` | BS-DFS with an event callback and the paper's step counters |
+| `bcdfs_traced.py` | BC-DFS with the same event schema, so the two are directly comparable |
+| `trace_eval.py` | boundary pass and delay statistics over a recorded trace |
 
 Each algorithm module has a self-check; run it directly, for example
 

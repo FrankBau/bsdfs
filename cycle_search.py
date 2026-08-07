@@ -82,8 +82,8 @@ def main():
     # CYCLE_SEARCH is incomplete: it misses ['a', 'e', 'c', 'b', 'd'].
     # See https://arxiv.org/abs/2512.08392
     missed = [c for c in cycles_good if c not in cycles_bad]
-    assert missed == [["a", "e", "c", "b", "d"]]
-    print(f"CYCLE_SEARCH missed {len(missed)} of {len(cycles_good)} cycles: {missed}")
+    assert missed == [["a", "e", "c", "b", "d"]], "unexpected result"
+    print(f"CYCLE_SEARCH missed {len(missed)} of {len(cycles_good)} cycles: {missed} as expected.")
 
 
 if __name__ == "__main__":

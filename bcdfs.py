@@ -16,7 +16,7 @@ python translation of pseudo-code from
 
 
 def bcdfs(G, s, t, k):
-    """original control-flow, NO completeness"""
+    """original control-flow, completeness NOT guaranteed"""
     S = []
     bar = {v: 0 for v in G.nodes}
 
@@ -56,23 +56,58 @@ def bcdfs(G, s, t, k):
 
 
 def main():
+    import random
+
     import networkx as nx
 
-    import experiments_base as base
+    import dfs
 
-    # smallest counter-example to BC-DFS's completeness
+    # smallest counter-example to BC-DFS's completeness, the graph traced
+    # in legacy/bcdfs_trace.py
     G = nx.parse_adjlist(
         ["a b c", "b c d e", "c b d", "d b", "e"], create_using=nx.DiGraph
     )
-    assert list(bcdfs(G, s="a", t="e", k=4)) == [
+    got = list(map(list, bcdfs(G, s="a", t="e", k=4)))
+    expected = list(map(list, dfs.all_simple_paths(G, "a", "e", 4)))
+    assert got == [
         ["a", "b", "e"],
         ["a", "c", "b", "e"],
-    ]  # missing ['a', 'c', 'd', 'b', 'e']
+    ]
+    absent = [q for q in expected if q not in got]
+    assert absent == [["a", "c", "d", "b", "e"]]
+    print(f"counter-example: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
 
-    # the same incompleteness at scale: BC-DFS stays sound and
-    # lexicographic, but misses paths on a noticeable fraction of
-    # random instances
-    base.smoke(bcdfs, complete=False)
+    # the same incompleteness at scale: BC-DFS stays sound, but misses
+    # paths on a noticeable fraction of random instances, so the missed
+    # paths are counted and reported instead of asserted away
+    RUNS = 10_000
+
+    for n in range(2, 8):
+        found = missed = bad_instances = 0
+        for run in range(RUNS):
+            rng = random.Random(42 + run)
+            m = rng.randint(0, n * (n - 1))
+            k = max(rng.getrandbits(n).bit_count(), 1)  # binomial distribution
+            H = nx.gnm_random_graph(n, m, seed=rng, directed=True)
+            s, t = rng.sample(range(n), 2)
+
+            got = list(map(list, bcdfs(H, s, t, k)))
+            expected = list(map(list, dfs.all_simple_paths(H, s, t, k)))
+            where = f"{s=} {t=} {k=} edges={sorted(H.edges)}"
+
+            # soundness is never relaxed: a spurious path would be a failure
+            spurious = [q for q in got if q not in expected]
+            assert not spurious, f"spurious path {spurious[0]}: {where}"
+
+            absent = [q for q in expected if q not in got]
+            found += len(got)
+            missed += len(absent)
+            bad_instances += bool(absent)
+
+        print(
+            f"n={n}  {RUNS:,} random digraphs sound, {found:,} paths, "
+            f"{missed:,} missed on {bad_instances:,} digraphs"
+        )
 
 
 if __name__ == "__main__":

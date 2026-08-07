@@ -1,3 +1,6 @@
+""" Experiment accompanying the paper, generates log and .pdf figure"""
+
+
 import math
 import random
 import networkx as nx

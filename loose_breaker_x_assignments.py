@@ -12,6 +12,49 @@ import sys
 sys.setrecursionlimit(100_000)
 
 
+def bcdfs(G, s, t, k):
+    """original control-flow, completeness NOT guaranteed"""
+    S = []
+    bar = {v: 0 for v in G.nodes}
+
+    def length(S):
+        return len(S) - 1
+
+    def UpdateBarrier(u, l):
+        if bar[u] > l:
+            bar[u] = l
+            for v in G.predecessors(u):
+                if v not in S:
+                    UpdateBarrier(v, l + 1)
+
+    def search(u):
+        F = k + 1
+        S.append(u)
+        if u == t:
+            yield S.copy()
+            S.pop()
+            F = 0
+            return F
+        elif length(S) < k:
+            for v in G.successors(u):
+                if v not in S:
+                    if length(S) + 1 + bar[v] <= k:
+                        f = yield from search(v)
+                        if f != k + 1:
+                            F = min(F, f + 1)
+        if F == k + 1:
+            if u=='x': print(f"{bar['x']:2}", end=' ')
+            bar[u] = k - length(S) + 1
+        else:
+            UpdateBarrier(u, F)
+            print(f"{u}")
+        S.pop()
+        return F
+
+    yield from search(s)
+    print("")
+
+
 def bsdfs_tight(G, s, t, k):
     """tight scheme (original BSDFS)"""
     b = {x: 0 for x in G.nodes}
@@ -44,10 +87,10 @@ def bsdfs_tight(G, s, t, k):
 
         if sd <= k:
             fruitful(v, sd)
-            print("")
+            print(f"{v}")
         else:
             b[v] = k - h + 1
-            if v=='x': print(f"{b['x']:2}", end='\t')
+            if v=='x': print(f"{b['x']:2}", end=' ')
         S.pop()
         on_path.remove(v)
         return sd
@@ -89,7 +132,7 @@ def bsdfs_loose(G, s, t, k):
             print(f"{v}")
         else:
             b[v] = k - h + 1
-            if v=='x': print(f"{b['x']:2}", end='\t')
+            if v=='x': print(f"{b['x']:2}", end=' ')
         S.pop()
         return sd
 
@@ -129,7 +172,7 @@ def bsdfs_lazy(G, s, t, k):
             update(v)
         else:
             b[v] = k - h + 1
-            if v=='x': print(f"{b['x']:2}", end='\t')
+            if v=='x': print(f"{b['x']:2}", end=' ')
             for w in G.successors(v):
                 B[w].add(v)
 
@@ -185,10 +228,13 @@ def run(algo, k_max=40):
         G, s, t, k = loose_breaker(k)
         n = G.number_of_nodes()
         m = G.number_of_edges()
-        print(f"{k=:4} {n=:4} {m=:4}")
+        print(f"{k=:4} {n=:4} {m=:4}   ", end='')
         paths = list(algo(G, s, t, k))
+        print(paths)
+
 
 if __name__ == "__main__":
     run(bsdfs_tight)
     run(bsdfs_loose)
     run(bsdfs_lazy)
+    run(bcdfs)
