@@ -13,7 +13,7 @@ from matplotlib.colors import BoundaryNorm
 from bsdfs import bsdfs
 from bcdfs import bcdfs
 
-REPEATS = 5
+PASSES = 5
 
 import sys
 
@@ -24,7 +24,7 @@ if any("pydevd" in m for m in sys.modules):
 else:
     ISLICE = 100_000
     RUNS = 1_000
-print(f"{RUNS=} {ISLICE=} {REPEATS=}")
+print(f"{RUNS=} {ISLICE=} {PASSES=}")
 
 K_VALUES = range(3, 11)
 CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
@@ -60,52 +60,74 @@ def check_perf_counter_resolution():
         print(f"Error retrieving clock info: {e}")
 
 
-# could be made more robust by decorrelating the runs over time
 def get_runtime(G, s, t, k, algo):
-    dt = []
-    for _ in range(REPEATS):
-        gc.disable()
-        tick = time.perf_counter()
-        n_paths = sum(1 for _ in islice(algo(G, s, t, k), ISLICE))
-        dt += [time.perf_counter() - tick]
-        gc.enable()
-    return min(dt), n_paths
+    gc.disable()
+    tick = time.perf_counter()
+    n_paths = sum(1 for _ in islice(algo(G, s, t, k), ISLICE))
+    dt = time.perf_counter() - tick
+    gc.enable()
+    return dt, n_paths
+
+
+def get_runtimes(graph_generator):
+    best = {}   # (run, k) -> [t_bs, t_bc, p_bs, p_bc]
+    truncated = {k: 0 for k in K_VALUES}
+
+    for p in range(PASSES):
+        for run in range(RUNS):
+            G, s, t = graph_generator(run)
+            for k in K_VALUES:
+                key = (run, k)
+                if p > 0 and key not in best:
+                    continue # truncated on pass 0
+                tb, pb = get_runtime(G, s, t, k, bsdfs)
+                if p == 0 and pb >= ISLICE:
+                    truncated[k] += 1
+                    continue
+                tc, pc = get_runtime(G, s, t, k, bcdfs)
+                if key in best:
+                    best[key][0] = min(best[key][0], tb)
+                    best[key][1] = min(best[key][1], tc)
+                else:
+                    best[key] = [tb, tc, pb, pc]
+    return best, truncated
 
 
 def print_totals(title, totals):
     print(f"\n--- {title}: totals ---")
-    print(f"{'k':>3} {'n':>6} {'total bc/bs':>12} {'per-output':>11} {'median inst.':>13}")
+    print(f"{'k':>3} {'n':>6} {'total bs/bc':>12} {'per-output':>11} {'median inst.':>13}")
     for k in K_VALUES:
         c = totals[k]
-        tot = c["t_bc"]/c["t_bs"]
-        per = (c["t_bc"]/c["out_bc"]) / (c["t_bs"]/c["out_bs"])
+        if not c["n"]:
+            continue
+        tot = c["t_bs"]/c["t_bc"]
+        per = (c["t_bs"]/c["out_bs"]) / (c["t_bc"]/c["out_bc"])
         print(f"{k:>3} {c['n']:6,} {tot:12.3f} {per:11.3f} {c['median']:13.3f}")
 
 
 def make_ax(ax, title, graph_generator):
     ks = list(K_VALUES)
 
+    best, truncated = get_runtimes(graph_generator)
     data = {k: [] for k in K_VALUES}
     totals = {k: Counter() for k in K_VALUES}
     for run in range(RUNS):
-        G, s, t = graph_generator(run)
-        n, m = G.number_of_nodes(), G.number_of_edges()
         for k in K_VALUES:
-            runtime1, len_paths1 = get_runtime(G, s, t, k, bsdfs)
-            if len_paths1 >= ISLICE:
-                totals[k].update(truncated=1)
-                continue                          # skip before timing BC-DFS
-            runtime2, len_paths2 = get_runtime(G, s, t, k, bcdfs)
+            key = (run, k)
+            if key not in best:
+                continue
+            runtime1, runtime2, len_paths1, len_paths2 =  best[key]
             intervals1 = 1 + len_paths1
             intervals2 = 1 + len_paths2
             x = runtime2 / intervals2
             y = runtime1 / intervals1
             data[k].append((x, y/x))
             totals[k].update(n=1, t_bs=runtime1, t_bc=runtime2, out_bs=intervals1, out_bc=intervals2)
-            print(f"{run=:8} {n=:4} {m=:4} {k=:4}   {intervals1=:10} {intervals2=:10}   {runtime1=:12.9f} {runtime2=:12.9f}")
-
+            print(f"{run=:8} {k=:4}   {intervals1=:10} {intervals2=:10}   {runtime1=:12.9f} {runtime2=:12.9f}")
 
     for i, k in enumerate(ks):
+        if not data[k]:
+            continue
         xs, ys = zip(*data[k])
         ax.scatter(xs, ys, s=4, alpha=0.45, lw=0, color=CMAP(i), label=f"k={k}")
 
@@ -150,7 +172,7 @@ def main():
 
 def estimate_overhead(graph_generator):
 
-    from statistics import median, stdev
+    from statistics import median, quantiles
     def null(G, s, t, k):
         return []
 
@@ -161,7 +183,10 @@ def estimate_overhead(graph_generator):
         for k in K_VALUES:
             dt, n_paths = get_runtime(G, s, t, k, null)
             timings += [dt]
-    print(f"estimate_overhead: {median(timings)=:12.9f} s; {stdev(timings)=:12.9f} s.")
+    q = quantiles(timings, n=100)
+    print(f"estimate_overhead:  min {min(timings):.9f}, median {median(timings):.9f} s, p95 {q[94]:.9f}, p99 {q[98]:.9f}, max {max(timings):.9f}")
+    hiccups = sum(1 for t in timings if t > 1e-6)
+    print(f"  measurements above 1 us: {hiccups / len(timings):%}")
     return median(timings)
 
 

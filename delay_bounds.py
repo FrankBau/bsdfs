@@ -131,7 +131,7 @@ def main():
     fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
 
     fig.supxlabel("BS-DFS number of intervals")
-    axes[0].set_ylabel("max. delay / (k+1)(n+m)")
+    axes[0].set_ylabel("max. delay / $(k+1)(n+m)$")
 
     maxima_er, n_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
     maxima_ws, n_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)

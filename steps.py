@@ -167,19 +167,19 @@ def gen_ws(run):
 
 
 def print_totals(title, totals):
-    print(f"\n--- {title}: elementary steps, BC-DFS relative to BS-DFS ---")
-    print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bc/bs':>7}"
-          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7} {'per-int':>7}")
+    print(f"\n--- {title}: elementary steps, BS-DFS relative to BC-DFS ---")
+    print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bs/bc':>7}"
+          f" {'scan':>7} {'cascade':>8} {'output':>7} {'worst':>7} {'fired':>7}")
     for k in K_VALUES:
         c = totals[k]
         if not c["n"] or not c["bs_total"]:
             print(f"{k:>3} {c['n']:6,} -- no work recorded --")
             continue
-        rat = lambda a: c[f"bc_{a}"] / c[f"bs_{a}"] if c[f"bs_{a}"] else float("nan")
+        rat = lambda a: c[f"bs_{a}"] / c[f"bc_{a}"] if c[f"bc_{a}"] else float("nan")
         fired = c["bc_root"] / c["bc_fruitful"] if c["bc_fruitful"] else float("nan")
         per = (c["bc_total"]/c["bc_int"]) / (c["bs_total"]/c["bs_int"]) # steps per interval for each algorithm, then their ratio
         print(f"{k:>3} {c['n']:6,} {c['bs_total']:14,} {c['bc_total']:14,}"
-              f" {c['bc_total']/c['bs_total']:7.3f}"
+              f" {c['bs_total']/c['bc_total']:7.3f}"
               f" {rat('scan'):7.3f} {rat('cascade'):8.3f} {rat('output'):7.3f}"
               f" {c['worst']:7.3f} {fired:7.4f} {per:7.3f}")
 
