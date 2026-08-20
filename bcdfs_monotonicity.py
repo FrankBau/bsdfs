@@ -1,4 +1,6 @@
 """
+Search for bcdfs(G, s, t, k) instances where monotonicity claim is violated.
+
 python translation of pseudo-code from
 
   title        = {Efficient Hop-constrained s-t Simple Path Enumeration},
@@ -20,7 +22,7 @@ def bcdfs(G, s, t, k):
     """original control-flow, NO completeness"""
     S = []
     bar = {v: 0 for v in G.nodes}
-    unstacking = {}
+    S1 = defaultdict(list) # S1[u] - stack content when u was last (fruitless) unstacked
 
 
     def length(S):
@@ -39,7 +41,7 @@ def bcdfs(G, s, t, k):
         if u == t:
             yield S.copy()
             S.pop()
-            unstacking.clear()
+            S1.clear()
             F = 0
             return F
         elif length(S) < k:
@@ -52,12 +54,12 @@ def bcdfs(G, s, t, k):
 
         if F == k + 1:
             bar[u] = k - length(S) + 1
-            if u in unstacking:
-                if length(S) > unstacking[u]:               # non-decreasing → violates S2 < S1
-                    print(f"{G.edges=} {s=} {t=} {k=}")     # (or record the witness)
-                unstacking[u] = length(S)                   # update to current, for the next comparison
-            else:
-                unstacking[u] = length(S)
+            if u in S1:
+                if not length(S) < len(S1[u]): # non-decreasing → violates S2 < S1
+                    print(f"""{G.edges=} {s=} {t=} {k=} monotonicity violation:
+                        stack S1: {' '.join(map(str, S1[u]))}
+                        stack S2: {' '.join(map(str, S))}""")
+            S1[u] = S.copy()    # u unstacked
         else:
             # bar[u] = k + 1
             UpdateBarrier(u, F)
@@ -123,6 +125,7 @@ def all_digraphs_by_edge_count(n, m_min=0, m_max=None):
     if m_max is None:
         m_max = N
     for m in range(m_min, m_max + 1):
+        print(f"searching graphs with {n=} nodes and {m=} edges")
         for edge_subset in itertools.combinations(possible_edges, m):
             G = nx.DiGraph()
             G.add_nodes_from(nodes)
@@ -131,15 +134,13 @@ def all_digraphs_by_edge_count(n, m_min=0, m_max=None):
 
 
 def search_counterexamples(n=6, k=6):
-    s = 0
-    for m, G in all_digraphs_by_edge_count(n,  m_min=n):
-        for t in range(n):
-            if s == t:
-                continue
+    for m, G in all_digraphs_by_edge_count(n,  m_min=11):
+        for s, t in tuple(itertools.combinations(list(G.nodes), 2)):
+            if not nx.has_path(G, s, t):
+                continue # shortcut
             paths = list(bcdfs(G, s, t, k))
 
 def main():
-    
     # X: counter-example to completeness 
     X = nx.parse_adjlist(
         ["A B C", "B C D E", "C B D", "D B", "E"], create_using=nx.DiGraph
@@ -152,34 +153,25 @@ def main():
         ["A", "B", "E"],
         ["A", "C", "B", "E"],
     ]  # missing ['A', 'C', 'D', 'B', 'E']
+    nx.nx_pydot.write_dot(X, "X.dot")
 
-    # Z: counter-example to claimed monotonicity (||S2|| > ||S1||)
-    Z = nx.DiGraph()
-    # Z.add_edges_from([(0, 3), (1, 3), (1, 4), (1, 5), (2, 1), (3, 0), (3, 1), (3, 2), (4, 0), (4, 1), (4, 3), (5, 1)])
-    Z.add_edges_from([('A', 'D'), ('B', 'D'), ('B', 'E'), ('B', 'F'), ('D', 'A'), ('D', 'B'), ('D', 'C'), ('E', 'A'), ('E', 'B'), ('E', 'D'), ('F', 'B')])
+    # Y: counter-example to claimed monotonicity (||S2|| > ||S1||)
+    Y = nx.DiGraph()
+    Y.add_edges_from([('A', 'D'), ('B', 'D'), ('B', 'E'), ('B', 'F'), ('D', 'A'), ('D', 'B'), ('D', 'C'), ('E', 'A'), ('E', 'B'), ('E', 'D'), ('F', 'B')])
     s = 'E'
     t = 'C'
     k = 6
-    pathsZ = list(bcdfs(Z, s, t, k))
-    print(pathsZ)
-    nx.nx_pydot.write_dot(Z, "Z.dot")
+    pathsY = list(bcdfs(Y, s, t, k))
+    print(pathsY)
+    nx.nx_pydot.write_dot(Y, "Y.dot")
     # node F unstacked twice in same interval: ||S1||==2 < ||S2||==4
-    
-    
+
+    # systematic search, takes a long time
     # search_counterexamples()
 
+    # random search, finds alot quickly
     for n in range(5, 15):
         validate_er(n, 10_000_000)
-
-    runs = 1_000_000
-    random.seed(42)
-    for n in range(6, 10):
-        for k in range(n - 1, n + 2):
-            for run in range(runs):
-                p = random.uniform(0, 1)
-                G = nx.gnp_random_graph(n, p, directed=True)
-                s, t = random.sample(range(n), 2)
-                bcdfs(G, s, t, k)
 
 if __name__ == "__main__":
     main()

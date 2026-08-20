@@ -103,6 +103,8 @@ Demonstrating that the $O(k(n+m))$ delay bound can be broken in the loose and la
 | File | Algorithm |
 | --- | --- |
 | `bcdfs.py` | `BC-DFS` (Peng et al.), incomplete |
+| `bcdfs_traced.py` | `BC-DFS` (Peng et al.), generates execution traces for paper appendix graphs X and Y |
+| `bcdfs_monotonicity.py` | `BC-DFS` (Peng et al.), searches for instances where the monotonicity claim is violated, including graph Y |
 | `cycle_search.py` | `CYCLE_SEARCH` (Gupta and Suzumura), incomplete |
 
 ## Traces
