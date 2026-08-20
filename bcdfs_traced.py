@@ -1,4 +1,6 @@
 """
+This code reproduces the execution traces of graph X and Y form the paper.
+
 python translation of pseudo-code from
 
   title        = {Efficient Hop-constrained s-t Simple Path Enumeration},
@@ -76,34 +78,43 @@ def bcdfs(G, s, t, k):
     print_trace()
 
 
-import networkx as nx
-
-
 def main():
-    
-    # X: counter-example to completeness 
+    import networkx as nx
+    import bsdfs_trivial
+
+    print("### counter-example to BC-DFS's completeness, graph X in the paper ###")
     X = nx.parse_adjlist(
         ["A B C", "B C D E", "C B D", "D B", "E"], create_using=nx.DiGraph
     )
     s = 'A'
     t = 'E'
     k = 4
-    pathsX = list(bcdfs(X, s, t, k))
-    assert pathsX == [
+    got = list(bcdfs(X, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(X, s, t, k))
+    assert got == [
         ["A", "B", "E"],
         ["A", "C", "B", "E"],
-    ]  # missing ['A', 'C', 'D', 'B', 'E']
+    ]
+    absent = [q for q in expected if q not in got]
+    assert absent == [["A", "C", "D", "B", "E"]]
+    print(f"counter-example: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
 
-    # Z: counter-example to claimed monotonicity (||S2|| > ||S1||)
-    Z = nx.DiGraph()
-    # Z.add_edges_from([(0, 3), (1, 3), (1, 4), (1, 5), (2, 1), (3, 0), (3, 1), (3, 2), (4, 0), (4, 1), (4, 3), (5, 1)])
-    Z.add_edges_from([('A', 'D'), ('B', 'D'), ('B', 'E'), ('B', 'F'), ('D', 'A'), ('D', 'B'), ('D', 'C'), ('E', 'A'), ('E', 'B'), ('E', 'D'), ('F', 'B')])
+    print("### counter-example to BC-DFS's monotonicity claim, graph Y in the paper ###")
+    Y = nx.parse_adjlist(
+        ["A D", "B D E F", "C", "D A B C", "E A B D", "F B"], create_using=nx.DiGraph
+    )
     s = 'E'
     t = 'C'
     k = 6
-    pathsZ = list(bcdfs(Z, s, t, k))
-    print(pathsZ)
-    nx.nx_pydot.write_dot(Z, "Z.dot")
-    
+    got = list(bcdfs(Y, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(Y, s, t, k))
+    assert got == [
+        ["E", "A", "D", "C"],
+        ["E", "B", "D", "C"],
+        ["E", "D", "C"]
+    ]
+    assert got == expected, "completeness should hold here"
+    print("### the end ###")
+
 if __name__ == "__main__":
     main()

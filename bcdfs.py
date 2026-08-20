@@ -57,25 +57,41 @@ def bcdfs(G, s, t, k):
 
 def main():
     import random
-
     import networkx as nx
-
     import bsdfs_trivial
 
-    # smallest counter-example to BC-DFS's completeness, the graph traced
-    # in legacy/bcdfs_trace.py
-    G = nx.parse_adjlist(
-        ["a b c", "b c d e", "c b d", "d b", "e"], create_using=nx.DiGraph
+    # counter-example to BC-DFS's completeness, graph X in the paper
+    X = nx.parse_adjlist(
+        ["A B C", "B C D E", "C B D", "D B", "E"], create_using=nx.DiGraph
     )
-    got = list(map(list, bcdfs(G, s="a", t="e", k=4)))
-    expected = list(map(list, bsdfs_trivial.bsdfs(G, "a", "e", 4)))
+    s = 'A'
+    t = 'E'
+    k = 4
+    got = list(bcdfs(X, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(X, s, t, k))
     assert got == [
-        ["a", "b", "e"],
-        ["a", "c", "b", "e"],
+        ["A", "B", "E"],
+        ["A", "C", "B", "E"],
     ]
     absent = [q for q in expected if q not in got]
-    assert absent == [["a", "c", "d", "b", "e"]]
+    assert absent == [["A", "C", "D", "B", "E"]]
     print(f"counter-example: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
+
+    # counter-example to BC-DFS's monotonicity claim, graph Y in the paper
+    Y = nx.parse_adjlist(
+        ["A D", "B D E F", "C", "D A B C", "E A B D", "F B"], create_using=nx.DiGraph
+    )
+    s = 'E'
+    t = 'C'
+    k = 6
+    got = list(bcdfs(Y, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(Y, s, t, k))
+    assert got == [
+        ["E", "A", "D", "C"],
+        ["E", "B", "D", "C"],
+        ["E", "D", "C"]
+    ]
+    assert got == expected, "completeness should hold here"
 
     # the same incompleteness at scale: BC-DFS stays sound, but misses
     # paths on a noticeable fraction of random instances, so the missed
@@ -92,8 +108,8 @@ def main():
             H = nx.gnm_random_graph(n, m, seed=rng, directed=True)
             s, t = rng.sample(range(n), 2)
 
-            got = list(map(list, bcdfs(H, s, t, k)))
-            expected = list(map(list, bsdfs_trivial.bsdfs(H, s, t, k)))
+            got = list(bcdfs(H, s, t, k))
+            expected = list(bsdfs_trivial.bsdfs(H, s, t, k))
             where = f"{s=} {t=} {k=} edges={sorted(H.edges)}"
 
             # soundness is never relaxed: a spurious path would be a failure
