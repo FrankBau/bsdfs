@@ -104,3 +104,31 @@ class Tee:
     def __call__(self, ev):
         for f in self.targets:
             f(ev)
+
+
+if __name__ == "__main__":
+    import networkx as nx
+
+    from bsdfs_traced import bsdfs_traced
+
+    G = nx.DiGraph()
+    G.add_edges_from([
+        ("s", "a"), ("s", "b"),
+        ("a", "b"), ("a", "c"),
+        ("b", "c"), ("b", "d"),
+        ("c", "a"), ("c", "d"),
+        ("d", "b"), ("d", "t"),
+    ])
+    trace = []
+    steps = bsdfs_traced(G, "s", "t", 4, trace.append)
+    boundary_events = {index: (tau, step)
+                       for tau, step, index in boundaries(trace)}
+
+    print(f"graph edges: {list(G.edges)}")
+    print("s='s', t='t', k=4")
+    for index, event in enumerate(trace):
+        print(event)
+        if index in boundary_events:
+            tau, step = boundary_events[index]
+            print(("boundary", tau, step))
+    print(f"steps: {steps}")

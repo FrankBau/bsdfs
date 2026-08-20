@@ -84,3 +84,23 @@ def bsdfs_traced(G, s, t, k, emit):
     search(s)
     emit(("term", steps))
     return steps
+
+
+if __name__ == "__main__":
+    import networkx as nx
+
+    G = nx.DiGraph()
+    G.add_edges_from([
+        ("s", "a"), ("s", "b"),
+        ("a", "b"), ("a", "c"),
+        ("b", "c"), ("b", "d"),
+        ("c", "a"), ("c", "d"),
+        ("d", "b"), ("d", "t"),
+    ])
+    trace = []
+    steps = bsdfs_traced(G, "s", "t", 4, trace.append)
+    print(f"graph edges: {list(G.edges)}")
+    print("s='s', t='t', k=4")
+    for event in trace:
+        print(event)
+    print(f"steps: {steps}")

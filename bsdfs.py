@@ -59,13 +59,12 @@ def bsdfs(G, s, t, k):
 
 if __name__ == "__main__":
     # the algorithm above needs only the standard library; the self-check
-    # additionally uses NetworkX to draw the random instances and dfs.py
-    # as ground truth
+    # additionally uses NetworkX to draw the random instances and bsdfs_trival.py
+    # as known-good implementation
+
     import random
-
     import networkx as nx
-
-    import dfs
+    import bsdfs_trivial
 
     RUNS = 10_000
 
@@ -81,7 +80,7 @@ if __name__ == "__main__":
             # both enumerators scan successors in adjacency order, so the
             # outputs must agree element by element, not just as sets
             got = list(map(list, bsdfs(G, s, t, k)))
-            expected = list(map(list, dfs.all_simple_paths(G, s, t, k)))
+            expected = list(map(list, bsdfs_trivial.bsdfs(G, s, t, k)))
             assert got == expected, (
                 f"{s=} {t=} {k=} edges={sorted(G.edges)}"
                 f"\n  got      {got}\n  expected {expected}"

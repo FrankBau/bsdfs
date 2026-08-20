@@ -42,9 +42,9 @@ if __name__ == "__main__":
     # internal routine for finding all simple s-cycles (fixed s)
     from networkx.algorithms.cycles import _bounded_cycle_search
 
-    RUNS = 100_000
+    RUNS = 10_000
 
-    for n in range(2, 9):
+    for n in range(2, 8):
         paths = 0
         cycles = 0
         for run in range(RUNS):

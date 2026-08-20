@@ -43,10 +43,8 @@ def bsdfs(G, s, t, k):
 
 if __name__ == "__main__":
     import random
-
     import networkx as nx
-
-    import dfs
+    import bsdfs_trivial
 
     RUNS = 10_000
 
@@ -60,7 +58,7 @@ if __name__ == "__main__":
             s, t = rng.sample(range(n), 2)
 
             got = list(map(list, bsdfs(G, s, t, k)))
-            expected = list(map(list, dfs.all_simple_paths(G, s, t, k)))
+            expected = list(map(list, bsdfs_trivial.bsdfs(G, s, t, k)))
             assert got == expected, (
                 f"{s=} {t=} {k=} edges={sorted(G.edges)}"
                 f"\n  got      {got}\n  expected {expected}"

@@ -60,7 +60,7 @@ def main():
 
     import networkx as nx
 
-    import dfs
+    import bsdfs_trivial
 
     # smallest counter-example to BC-DFS's completeness, the graph traced
     # in legacy/bcdfs_trace.py
@@ -68,7 +68,7 @@ def main():
         ["a b c", "b c d e", "c b d", "d b", "e"], create_using=nx.DiGraph
     )
     got = list(map(list, bcdfs(G, s="a", t="e", k=4)))
-    expected = list(map(list, dfs.all_simple_paths(G, "a", "e", 4)))
+    expected = list(map(list, bsdfs_trivial.bsdfs(G, "a", "e", 4)))
     assert got == [
         ["a", "b", "e"],
         ["a", "c", "b", "e"],
@@ -80,6 +80,7 @@ def main():
     # the same incompleteness at scale: BC-DFS stays sound, but misses
     # paths on a noticeable fraction of random instances, so the missed
     # paths are counted and reported instead of asserted away
+
     RUNS = 10_000
 
     for n in range(2, 8):
@@ -92,7 +93,7 @@ def main():
             s, t = rng.sample(range(n), 2)
 
             got = list(map(list, bcdfs(H, s, t, k)))
-            expected = list(map(list, dfs.all_simple_paths(H, s, t, k)))
+            expected = list(map(list, bsdfs_trivial.bsdfs(H, s, t, k)))
             where = f"{s=} {t=} {k=} edges={sorted(H.edges)}"
 
             # soundness is never relaxed: a spurious path would be a failure
