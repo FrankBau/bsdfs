@@ -83,22 +83,22 @@ and its delay is unknown, as explained in our preprint.
 
 
 # Graph Family loose_breaker(k)
-Demonstrating that the O(k(n+m)) delay bound can be broken in the loose and lazy schemes.
+Demonstrating that the $O(k(n+m))$ delay bound can be broken in the loose and lazy schemes.
 
 
 # Repository Layout
 
-## The algorithm and its variants
+## The Algorithm and Variants
 
 | File | Scheme |
 | --- | --- |
-| `bsdfs.py` | **BS-DFS, the tight scheme** — the reference implementation |
-| `bsdfs_trivial.py` | trivial scheme: barriers stay 0, a depth-limited DFS |
-| `bsdfs_loose.py` | loose scheme: barriers reset to 0 |
-| `bsdfs_lazy.py` | lazy scheme: barriers maintained via B sets |
-| `dfs.py` | plain depth-limited DFS; the ground truth of the self-checks |
+| `bsdfs.py` | **BS-DFS, the tight scheme** — our reference implementation |
+| `bsdfs_checked.py` | BS-DFS with many asserts, on-the-fly checking claims of the paper, long-running random tests in main |
+| `bsdfs_trivial.py` | trivial scheme: BS-DFS variant, barriers stay 0, a depth-limited DFS used as a known-good baseline |
+| `bsdfs_loose.py` | loose scheme: BS-DFS variant, barriers reset to 0 |
+| `bsdfs_lazy.py` | lazy scheme: BS-DFS variant, barriers maintained via B sets |
 
-## Baselines from the literature
+## From the Literature
 
 | File | Algorithm |
 | --- | --- |
@@ -110,15 +110,8 @@ Demonstrating that the O(k(n+m)) delay bound can be broken in the loose and lazy
 | File | Purpose |
 | --- | --- |
 | `bsdfs_traced.py` | BS-DFS with an event callback and the paper's step counters |
-| `bcdfs_traced.py` | BC-DFS with the same event schema, so the two are directly comparable |
 | `trace_eval.py` | boundary pass and delay statistics over a recorded trace |
 
-Each algorithm module has a self-check; run it directly, for example
-
-```
-python bsdfs.py
-python bcdfs.py          # demonstrates the missed paths
-```
 
 ## Experiments
 

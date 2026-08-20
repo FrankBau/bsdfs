@@ -13,8 +13,14 @@ Two conventions of the paper are followed literally:
     during the call.
 
 The checked version assumes s != t.  The cycle case s = t is covered by
-Lemma (Cycle Reduction); `split_source` builds the graph G' of that lemma so
-that s-cycle search can be checked as an s_o-s_i-path search.
+Lemma (Cycle Reduction); `split_source` builds the graph G' of that lemma, so an
+s-cycle search can be run and checked as check_paths(*split_source(G, s), k).
+The random harness does not do so: cycle mode is a path search on G' and adds no
+BS-DFS invariant of its own.
+
+The ground truth is the plain DFS `simple_paths` below, not networkx: the reference
+must not share code, and hence bugs, with the implementation under test, and it must
+not change underneath the harness.  networkx is used for graph storage and sampling only.
 
 Run with asserts enabled (no -O / -OO).
 """
@@ -24,8 +30,9 @@ import math
 import random
 import time
 from collections import Counter, deque
+from itertools import islice
 from multiprocessing import Pool
-
+from tqdm import tqdm
 import networkx as nx
 
 INF = float("inf")
@@ -232,46 +239,43 @@ def split_source(G, s):
 
 
 # ---------------------------------------------------------------------------
-# validation harness (small graphs only: the assertions are quadratic per call)
+# ground truth and per-instance check
 # ---------------------------------------------------------------------------
 
-def check_paths(G, s, t, k):
-    """Cross-check the asserted run against networkx.all_simple_paths."""
-    paths = [tuple(p) for p in bsdfs_checked(G, s, t, k)]
-    reference = [tuple(p) for p in nx.all_simple_paths(G, s, t, k)]
+from simple_search import simple_search
+
+
+def check_paths(G, s, t, k, limit=None):
+    """Cross-check the asserted run against the DFS ground truth.
+
+    Both enumerations are depth-first in successor-list order, so their output
+    *sequences* agree and a prefix comparison is exact: with `limit` set, only the
+    first `limit` outputs of each are compared and everything beyond the cutoff stays
+    unexamined -- the generator is then abandoned, so the assertions of the calls still
+    open at the cutoff never run.
+    """
+    paths = [tuple(p) for p in islice(bsdfs_checked(G, s, t, k), limit)]
+    reference = [tuple(p) for p in islice(simple_search(G, s, t, k), limit)]
     assert len(paths) == len(set(paths)), "Observation (4): no output is produced twice"
-    assert set(paths) == set(reference), f"output differs: missing={set(reference) - set(paths)} spurious={set(paths) - set(reference)}"
-    assert paths == reference, "both are depth-first in successor-list order, so even the output order agrees"
-    if all(list(G.successors(v)) == sorted(G.successors(v)) for v in G.nodes):
+    assert paths == reference, f"output differs at index {next((i for i, (a, r) in enumerate(zip(paths, reference)) if a != r), min(len(paths), len(reference)))}"
+    try:
+        adjacency_sorted = all(list(G.successors(v)) == sorted(G.successors(v)) for v in G.nodes)
+    except TypeError:                   # node labels not totally ordered, as in the split source of Lemma (Cycle Reduction)
+        adjacency_sorted = False
+    if adjacency_sorted:
         assert paths == sorted(paths), "for sorted adjacency lists that order is the lexicographic one"
     return len(paths)
 
 
-def check_cycles(G, s, k):
-    """Cross-check s-cycle search via Lemma (Cycle Reduction) against networkx.simple_cycles."""
-    H, s_o, s_i = split_source(G, s)
-    cycles = set()
-    for p in bsdfs_checked(H, s_o, s_i, k):
-        assert p[0] == s_o and p[-1] == s_i
-        cycles.add(tuple([s] + list(p[1:-1])))
-    reference = set()
-    for c in nx.simple_cycles(G, length_bound=k):
-        if s in c:
-            i = c.index(s)
-            reference.add(tuple(c[i:] + c[:i]))
-    assert cycles == reference, f"cycles differ: missing={reference - cycles} spurious={cycles - reference}"
-    return len(cycles)
-
-
 # ---------------------------------------------------------------------------
-# instances: an instance is a pure function of (seed, run), so a failing run is
+# instances: an instance is a pure function of (seed, run, nmax), so a failing run is
 # replayable from its index alone and nothing but small tuples is pickled
 # ---------------------------------------------------------------------------
 
-def instance(seed, run):
+def instance(seed, run, nmax=9):
     """The (G, s, t, k) of a given run.  Seeding from a string is deterministic across processes."""
     rng = random.Random(f"{seed}:{run}")
-    n = rng.randint(3, 9)
+    n = rng.randint(3, nmax)
     m = int(n * math.exp(rng.uniform(0, math.log(n - 1))))
     G = nx.gnm_random_graph(n, m, directed=True, seed=rng.randint(0, 10**9))
     k = rng.randint(1, n)
@@ -293,11 +297,11 @@ def digest(key):
     return int.from_bytes(hashlib.blake2b(repr(key).encode(), digest_size=8).digest(), "big")
 
 
-def replay(seed, run):
+def replay(seed, run, nmax=9, limit=None):
     """Re-run a single instance in-process, with the AssertionError propagating for post-mortem debugging."""
-    G, s, t, k = instance(seed, run)
-    print(f"seed={seed} run={run}: n={G.number_of_nodes()} m={G.number_of_edges()} {s=} {t=} {k=} edges={list(G.edges)}")
-    return check_paths(G, s, t, k), check_cycles(G, s, k)
+    G, s, t, k = instance(seed, run, nmax)
+    print(f"seed={seed} run={run}: n={G.number_of_nodes()} m={G.number_of_edges()} {s=} {t=} {k=} {limit=} edges={list(G.edges)}")
+    return check_paths(G, s, t, k, limit)
 
 
 # ---------------------------------------------------------------------------
@@ -305,36 +309,35 @@ def replay(seed, run):
 # ---------------------------------------------------------------------------
 
 def worker(args):
-    """One run.  Returns (run, n, paths, cycles, instance_digest, graph_digest, failure)."""
-    seed, run, catch = args
-    G, s, t, k = instance(seed, run)
+    """One run.  Returns (run, n, paths, instance_digest, graph_digest, failure)."""
+    seed, run, nmax, limit, catch = args
+    G, s, t, k = instance(seed, run, nmax)
     key = run_key(G, s, t, k)
     fingerprints = (digest(key), digest(key[:3]))
     try:
-        paths = check_paths(G, s, t, k)
-        cycles = check_cycles(G, s, k)
+        paths = check_paths(G, s, t, k, limit)
     except AssertionError as failure:
         if not catch:
             raise
-        return (run, G.number_of_nodes(), 0, 0) + fingerprints + (f"{type(failure).__name__}: {failure}",)
-    return (run, G.number_of_nodes(), paths, cycles) + fingerprints + (None,)
+        return (run, G.number_of_nodes(), 0) + fingerprints + (f"{type(failure).__name__}: {failure}",)
+    return (run, G.number_of_nodes(), paths) + fingerprints + (None,)
 
 
-def tasks(seed, runs, first, catch):
+def tasks(seed, runs, first, nmax, limit, catch):
     for run in range(first, first + runs):
-        yield (seed, run, catch)
+        yield (seed, run, nmax, limit, catch)
 
 
-def validate(runs, seed=42, processes=None, first=0, chunksize=64, track_keys=True, stop_after=10):
+def validate(runs, seed=42, processes=None, first=0, nmax=9, limit=None, chunksize=64, track_keys=True, stop_after=10):
     """Run `runs` instances.  processes=0 runs sequentially in-process and lets assertions
     propagate (use for debugging); otherwise failures are collected and reported by run index."""
     sequential = (processes == 0)
     seen_instances, seen_graphs = set(), set()
     per_n = Counter()
-    total_paths = total_cycles = done = 0
+    total_paths = done = 0
     failures = []
 
-    work = tasks(seed, runs, first, catch=not sequential)
+    work = tasks(seed, runs, first, nmax, limit, catch=not sequential)
     tick = time.perf_counter()
     if sequential:
         results = map(worker, work)
@@ -344,28 +347,25 @@ def validate(runs, seed=42, processes=None, first=0, chunksize=64, track_keys=Tr
         results = pool.imap_unordered(worker, work, chunksize=chunksize)
 
     try:
-        for run, n, paths, cycles, key_digest, graph_digest, failure in results:
+        for run, n, paths, key_digest, graph_digest, failure in tqdm(results, total=runs, leave=False):
             done += 1
             per_n[n] += 1
             total_paths += paths
-            total_cycles += cycles
             if track_keys:
                 seen_instances.add(key_digest)
                 seen_graphs.add(graph_digest)
             if failure is not None:
                 failures.append((run, failure))
-                print(f"\nFAILED seed={seed} run={run}: {failure}\n  replay with: replay({seed}, {run})")
+                print(f"\nFAILED seed={seed} run={run}: {failure}\n  replay with: replay({seed}, {run}, nmax={nmax}, limit={limit})")
                 if len(failures) >= stop_after:
                     break
-            if done % 10 == 0:
-                print(f"{done:9,} / {runs:,}", end="\r", flush=True)
     finally:
         if pool is not None:
             pool.terminate()
             pool.join()
 
     elapsed = time.perf_counter() - tick
-    print(f"{done:,} runs in {elapsed:.1f} s ({done / max(elapsed, 1e-9):,.0f} runs/s), {total_paths:,} s-t-paths, {total_cycles:,} s-cycles")
+    print(f"nmax={nmax} limit={limit}: {done:,} runs in {elapsed:.1f} s ({done / max(elapsed, 1e-9):,.0f} runs/s), {total_paths:,} s-t-paths")
     if track_keys:
         print(f"distinct instances: {len(seen_instances):,}, distinct graphs: {len(seen_graphs):,}")
     print(f"runs per n: {dict(sorted(per_n.items()))}")
@@ -379,10 +379,30 @@ def smoke():
 
 
 def main():
-    """Let the fans roar."""
-    return validate(runs=10_000_000, seed=42, processes=None, chunksize=256)
+    """Let the fans roar: exhaustive small instances, then truncated larger ones."""
+    validate(runs=5_000_000, seed=42, processes=None, nmax= 9, limit=None, chunksize=256)
+    validate(runs=4_000_000, seed=43, processes=None, nmax=20, limit= 100, chunksize= 64)
+    validate(runs=1_000_000, seed=44, processes=None, nmax=50, limit=  10, chunksize=  8)
 
 
 if __name__ == "__main__":
     smoke()
     main()
+
+# reference output
+# nmax=9 limit=None: 2,000 runs in 5.1 s (395 runs/s), 89,926 s-t-paths                                                                                                                                                                           
+# distinct instances: 1,986, distinct graphs: 1,861
+# runs per n: {3: 271, 4: 255, 5: 300, 6: 307, 7: 289, 8: 315, 9: 263}
+# all assertions passed
+# nmax=9 limit=None: 5,000,000 runs in 1197.6 s (4,175 runs/s), 284,255,136 s-t-paths                                                                                                                                                             
+# distinct instances: 4,191,209, distinct graphs: 3,844,602
+# runs per n: {3: 715243, 4: 713510, 5: 713935, 6: 714219, 7: 715569, 8: 712813, 9: 714711}
+# all assertions passed
+# nmax=20 limit=100: 4,000,000 runs in 1436.3 s (2,785 runs/s), 126,315,697 s-t-paths                                                                                                                                                             
+# distinct instances: 3,769,620, distinct graphs: 3,679,272
+# runs per n: {3: 221651, 4: 222444, 5: 222516, 6: 222162, 7: 222383, 8: 221571, 9: 222243, 10: 221348, 11: 221655, 12: 222634, 13: 222450, 14: 222080, 15: 222273, 16: 222826, 17: 222653, 18: 222388, 19: 222361, 20: 222362}
+# all assertions passed
+# nmax=50 limit=10: 1,000,000 runs in 879.1 s (1,138 runs/s), 6,402,155 s-t-paths                                                                                                                                                                 
+# distinct instances: 982,549, distinct graphs: 975,415
+# runs per n: {3: 21120, 4: 21303, 5: 20760, 6: 20677, 7: 20900, 8: 21061, 9: 20881, 10: 20942, 11: 20962, 12: 20792, 13: 20648, 14: 20639, 15: 20818, 16: 20876, 17: 20729, 18: 20930, 19: 20907, 20: 20881, 21: 20882, 22: 21062, 23: 20787, 24: 20887, 25: 20720, 26: 20786, 27: 20913, 28: 20613, 29: 20703, 30: 21062, 31: 20828, 32: 20682, 33: 20804, 34: 20801, 35: 20778, 36: 20681, 37: 20855, 38: 20722, 39: 20866, 40: 20841, 41: 20684, 42: 20746, 43: 20920, 44: 20788, 45: 20751, 46: 20804, 47: 20870, 48: 20650, 49: 20788, 50: 20900}
+# all assertions passed

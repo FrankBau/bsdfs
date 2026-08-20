@@ -56,6 +56,7 @@ def CYCLE_SEARCH(G, s, k):
 
 def main():
     import networkx as nx
+    import bsdfs_trivial
 
     # CYCLE_SEARCH counter-example
     G = nx.parse_adjlist(
@@ -64,7 +65,9 @@ def main():
     s = "a"
     k = 5
 
-    cycles_good = list(nx.algorithms.cycles._bounded_cycle_search(G, [s], length_bound=k))
+    cycles = list(bsdfs_trivial.bsdfs(G, s, s, k))
+    # strip closing edge
+    cycles_good = [c[:-1] for c in cycles]
     assert cycles_good == [
         ["a", "d"],
         ["a", "d", "b", "e", "c"],
