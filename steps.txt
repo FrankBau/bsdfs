@@ -1,5 +1,5 @@
 # Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]
-# steps 2026-08-07T08:30:30+02:00
+# steps 2026-08-20T13:21:21+02:00
 # Intel(R) Core(TM) i7-14700K | 28 cores | 31Gi RAM
 # Ubuntu 24.04.4 LTS | Python 3.12.3
 RUNS=1000 ISLICE=100000
@@ -4272,7 +4272,7 @@ run=     610 n=  10 m=  31 k=  10   bs_steps=     45.86 bc_steps=     27.50   bs
 run=     611 n=  29 m= 555 k=   3   bs_steps=     50.03 bc_steps=     27.69   bs_scan=     4399 bs_casc=     3626 bs_out=      680   bc_scan=     4138 bc_casc=        0 bc_out=      680
 run=     611 n=  29 m= 555 k=   4   bs_steps=     47.74 bc_steps=     27.41   bs_scan=    65507 bs_casc=    64234 bs_out=    14965   bc_scan=    68123 bc_casc=        0 bc_out=    14965
 run=     611 n=  29 m= 555 k=   5   bs_steps=     48.60 bc_steps=     28.36   bs_scan=  1082588 bs_casc=  1072404 bs_out=   299875   bc_scan=  1132693 bc_casc=        0 bc_out=   299875
-                                                                                                                                                                                         
+run=     612 n=  27 m= 170 k=   3   bs_steps=     42.42 bc_steps=     24.67   bs_scan=      354 bs_casc=      116 bs_out=       39   bc_scan=      257 bc_casc=        0 bc_out=       39
 run=     612 n=  27 m= 170 k=   4   bs_steps=     30.94 bc_steps=     19.85   bs_scan=     1048 bs_casc=      711 bs_out=      314   bc_scan=     1016 bc_casc=        0 bc_out=      314
 run=     612 n=  27 m= 170 k=   5   bs_steps=     30.09 bc_steps=     19.31   bs_scan=     3876 bs_casc=     3391 bs_out=     1700   bc_scan=     4013 bc_casc=        0 bc_out=     1682
 run=     612 n=  27 m= 170 k=   6   bs_steps=     31.34 bc_steps=     20.30   bs_scan=    18262 bs_casc=    16954 bs_out=     9631   bc_scan=    18221 bc_casc=      102 bc_out=     9057
@@ -14943,7 +14943,6 @@ run=     999 n=1000 m=6000 k=   8   bs_steps=    214.39 bc_steps=    168.68   bs
 run=     999 n=1000 m=6000 k=   9   bs_steps=     83.09 bc_steps=     61.33   bs_scan=    52856 bs_casc=    24300 bs_out=    10343   bc_scan=    44434 bc_casc=      909 bc_out=     8624
 run=     999 n=1000 m=6000 k=  10   bs_steps=     59.67 bc_steps=     40.68   bs_scan=   169318 bs_casc=   138376 bs_out=    68027   bc_scan=   129407 bc_casc=     8965 bc_out=    49721
 
-
 --- Erdős–Rényi: elementary steps, BS-DFS relative to BC-DFS ---
   k      n       BS steps       BC steps   bs/bc    scan  cascade  output   worst   fired per-int
   3  1,000      1,443,300        809,238   1.784   1.054      nan   1.000   2.522  0.0000   1.784
@@ -14965,4 +14964,4 @@ run=     999 n=1000 m=6000 k=  10   bs_steps=     59.67 bc_steps=     40.68   bs
   8  1,000     47,576,413     30,337,300   1.568   1.271   23.371   1.232   1.528  0.0261   1.280
   9  1,000    141,206,812     74,484,926   1.896   1.319   17.626   1.374   1.617  0.0337   1.389
  10  1,000    571,747,655    251,271,360   2.275   1.497   15.961   1.518   1.686  0.0373   1.510
-# steps done, 559 s
+# steps done, 554 s
