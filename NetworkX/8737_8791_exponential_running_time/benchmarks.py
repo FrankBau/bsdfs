@@ -9,7 +9,7 @@ from itertools import islice
 
 import adversarial_graphs
 
-from bsdfs_nx import bsdfs_bounded_cycle_search
+from bsdfs_nx import wrap_cycles
 from networkx.algorithms.cycles import _bounded_cycle_search
 
 
@@ -104,7 +104,7 @@ def dag_backedge_family(n_values, beta_values, p=None, seeds=range(10)):
 
 ALGOS = {
     "bounded_cycle_search":  lambda G, s, k: _bounded_cycle_search(G, [s], k),
-    "bsdfs": lambda G, s, k: bsdfs_bounded_cycle_search(G, [s], k),
+    "bsdfs": lambda G, s, k: wrap_cycles(G, [s], k),
 }
 
 
