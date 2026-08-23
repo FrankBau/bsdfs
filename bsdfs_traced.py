@@ -89,18 +89,14 @@ def bsdfs_traced(G, s, t, k, emit):
 if __name__ == "__main__":
     import networkx as nx
 
-    G = nx.DiGraph()
-    G.add_edges_from([
-        ("s", "a"), ("s", "b"),
-        ("a", "b"), ("a", "c"),
-        ("b", "c"), ("b", "d"),
-        ("c", "a"), ("c", "d"),
-        ("d", "b"), ("d", "t"),
-    ])
+    # graph Z: counter-example to BC-DFS completeness
+    Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c', 't'], create_using=nx.DiGraph)
+    s, t, k = 's', 't', 5
+
     trace = []
-    steps = bsdfs_traced(G, "s", "t", 4, trace.append)
-    print(f"graph edges: {list(G.edges)}")
-    print("s='s', t='t', k=4")
+    steps = bsdfs_traced(Z, s, t, k, trace.append)
+    print(f"graph edges: {list(Z.edges)}")
+    print(f"{s=}, {t=}, {k=}")
     for event in trace:
         print(event)
     print(f"steps: {steps}")

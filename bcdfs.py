@@ -75,7 +75,7 @@ def main():
     ]
     absent = [q for q in expected if q not in got]
     assert absent == [["A", "C", "D", "B", "E"]]
-    print(f"counter-example: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
+    print(f"counter-example graph X: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
 
     # counter-example to BC-DFS's monotonicity claim, graph Y in the paper
     Y = nx.parse_adjlist(
@@ -92,6 +92,15 @@ def main():
         ["E", "D", "C"]
     ]
     assert got == expected, "completeness should hold here"
+
+    # graph Z
+    Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c', 't'], create_using=nx.DiGraph)
+    s, t, k = 's', 't', 5
+    got = list(bcdfs(Z, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(Z, s, t, k))
+    absent = [q for q in expected if q not in got]
+    assert absent == [['s', 'd', 'z', 'b', 'a', 't']]
+    print(f"counter-example graph Z: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
 
     # the same incompleteness at scale: BC-DFS stays sound, but misses
     # paths on a noticeable fraction of random instances, so the missed

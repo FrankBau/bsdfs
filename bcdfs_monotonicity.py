@@ -141,7 +141,7 @@ def search_counterexamples(n=6, k=6):
             paths = list(bcdfs(G, s, t, k))
 
 def main():
-    # X: counter-example to completeness 
+    # X: counter-example to completeness
     X = nx.parse_adjlist(
         ["A B C", "B C D E", "C B D", "D B", "E"], create_using=nx.DiGraph
     )
@@ -165,6 +165,13 @@ def main():
     print(pathsY)
     nx.nx_pydot.write_dot(Y, "Y.dot")
     # node F unstacked twice in same interval: ||S1||==2 < ||S2||==4
+
+    # graph Z: counter-example to completeness
+    Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c', 't'], create_using=nx.DiGraph)
+    s, t, k = 's', 't', 5
+    pathsZ = list(bcdfs(Z, s, t, k))
+    print(pathsZ)
+    nx.nx_pydot.write_dot(Z, "Z.dot")
 
     # systematic search, takes a long time
     # search_counterexamples()

@@ -111,21 +111,20 @@ if __name__ == "__main__":
 
     from bsdfs_traced import bsdfs_traced
 
-    G = nx.DiGraph()
-    G.add_edges_from([
-        ("s", "a"), ("s", "b"),
-        ("a", "b"), ("a", "c"),
-        ("b", "c"), ("b", "d"),
-        ("c", "a"), ("c", "d"),
-        ("d", "b"), ("d", "t"),
-    ])
+    # counter-example to BC-DFS's monotonicity claim, graph Y in the paper
+    Y = nx.parse_adjlist(
+        ["A D", "B D E F", "C", "D A B C", "E A B D", "F B"], create_using=nx.DiGraph
+    )
+    s = 'E'
+    t = 'C'
+    k = 6
+
     trace = []
-    steps = bsdfs_traced(G, "s", "t", 4, trace.append)
+    steps = bsdfs_traced(Y, s, t, k, trace.append)
     boundary_events = {index: (tau, step)
                        for tau, step, index in boundaries(trace)}
 
-    print(f"graph edges: {list(G.edges)}")
-    print("s='s', t='t', k=4")
+    print(f"{s=}, {t=}, {k=}, graph edges: {list(Y.edges)}")
     for index, event in enumerate(trace):
         print(event)
         if index in boundary_events:

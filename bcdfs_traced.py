@@ -114,6 +114,16 @@ def main():
         ["E", "D", "C"]
     ]
     assert got == expected, "completeness should hold here"
+
+    # graph Z
+    Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c', 't'], create_using=nx.DiGraph)
+    s, t, k = 's', 't', 5
+    got = list(bcdfs(Z, s, t, k))
+    expected = list(bsdfs_trivial.bsdfs(Z, s, t, k))
+    absent = [q for q in expected if q not in got]
+    assert absent == [['s', 'd', 'z', 'b', 'a', 't']]
+    print(f"counter-example graph Z: BC-DFS misses {len(absent)} of {len(expected)} paths: {absent}")
+
     print("### the end ###")
 
 if __name__ == "__main__":
