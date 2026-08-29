@@ -10,7 +10,7 @@
 PYTHON  ?= python3
 PYFLAGS ?= -u -OO
 
-EXPERIMENTS = missed_paths steps runtime delay_bounds
+EXPERIMENTS = missed_paths steps runtime delay_bounds path_counts
 PDFS = $(addsuffix .pdf,$(EXPERIMENTS))
 
 export PYTHONIOENCODING = utf-8
@@ -35,8 +35,12 @@ $(EXPERIMENTS): %: %.pdf
 	} > $*.txt
 	@echo "=== $* finished $$(date -Is) -- $$(tail -1 $*.txt)"
 
-# only these two import the reference implementations
+# every experiment draws its instances from the shared graph families
+$(PDFS): graph_generator.py
+
+# these import the reference implementations
 missed_paths.pdf runtime.pdf: bsdfs.py bcdfs.py
+path_counts.pdf: bsdfs.py          # BS-DFS only, as the complete-enumeration oracle
 
 clean:
 	rm -rf __pycache__

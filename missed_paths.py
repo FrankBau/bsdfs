@@ -1,10 +1,7 @@
 """ Experiment accompanying the paper, generates log and .pdf figure"""
 
 
-import math
-import random
 from matplotlib.ticker import PercentFormatter
-import networkx as nx
 import numpy as np
 from itertools import islice
 import matplotlib.pyplot as plt
@@ -13,40 +10,10 @@ from collections import Counter
 
 from bsdfs import bsdfs
 from bcdfs import bcdfs
+from graph_generator import (CMAP, FAMILIES, ISLICE, K_VALUES, RUNS,
+                             COLS, make_panels, print_families)
 
-import sys
-
-if any("pydevd" in m for m in sys.modules):
-    print("### debug mode - reduced data set, for preview only ###")
-    ISLICE = 10_000
-    RUNS = 100
-else:
-    ISLICE = 100_000
-    RUNS = 1_000
-print(f"{RUNS=} {ISLICE=}")
-
-K_VALUES = range(3, 11)
-CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
-
-
-def gen_er(run):
-    rng = random.Random(42 + run)
-    n = rng.randint(6, 30)
-    m = int(n * math.exp(rng.uniform(0, math.log(n-1))))
-    G = nx.gnm_random_graph(n, m, directed=True, seed=rng)
-    s, t = rng.sample(list(G.nodes), 2)
-    return G, s, t
-
-
-def gen_ws(run):
-    rng = random.Random(73 + run)
-    n = 1000
-    d = 6
-    p = 0.2
-    H = nx.watts_strogatz_graph(n, d, p, seed=rng)
-    G = nx.DiGraph(H)
-    s, t = rng.sample(list(G.nodes), 2)
-    return G, s, t
+print_families("missed_paths")
 
 
 def print_totals(title, totals):
@@ -56,6 +23,9 @@ def print_totals(title, totals):
         c = totals[k]
         if not c["n"]:
             print(f"{k:>3} {0:6,} {c['truncated']:6,} -- all instances truncated --")
+            continue
+        if not c["bs"]:
+            print(f"{k:>3} {c['n']:6,} {c['truncated']:6,} -- no path found --")
             continue
         print(f"{k:>3} {c['n']:6,} {c['truncated']:6,} {c['bs']:12,} {c['bc']:12,}"
             f" {100*(1-c['bc']/c['bs']):7.2f}% {100*c['worst']:7.2f}% {100*c['lossy']/c['n']:6.1f}%")
@@ -108,13 +78,13 @@ def make_ax(ax, title, graph_generator):
 
 def main():
     plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
-    fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
+    fig, axes = make_panels()
 
     fig.supxlabel("BS-DFS number of paths")
-    axes[0].set_ylabel("BC-DFS missed paths")
+    for ax in axes[::COLS]:                      # leftmost panel of each row
+        ax.set_ylabel("BC-DFS missed paths")
 
-    totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
-    totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
+    totals = [make_ax(ax, f.name, f.generate) for ax, f in zip(axes, FAMILIES)]
 
     norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
@@ -124,9 +94,8 @@ def main():
 
     fig.savefig("missed_paths.pdf", bbox_inches="tight")
 
-
-    print_totals("Erdős–Rényi", totals_er)
-    print_totals("Watts–Strogatz", totals_ws)
+    for f, t in zip(FAMILIES, totals):
+        print_totals(f.name, t)
 
 
 if __name__ == "__main__":

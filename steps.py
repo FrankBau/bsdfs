@@ -20,9 +20,6 @@ Calibration: BS-DFS reproduces the exact step counts of lem:clique-trap,
 c*N_{c,k} for G_c and c*N_{c,k}+c^2-1 for the terminal interval of G_c^+.
 """
 
-import math
-import random
-import networkx as nx
 import numpy as np
 from itertools import islice
 import matplotlib.pyplot as plt
@@ -30,19 +27,10 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import PercentFormatter
 from collections import Counter, deque, defaultdict
 
-import sys
+from graph_generator import (CMAP, FAMILIES, ISLICE, K_VALUES, RUNS,
+                             COLS, make_panels, print_families)
 
-if any("pydevd" in m for m in sys.modules):
-    print("### debug mode - reduced data set, for preview only ###")
-    ISLICE = 10_000
-    RUNS = 100
-else:
-    ISLICE = 100_000
-    RUNS = 1_000
-print(f"{RUNS=} {ISLICE=}")
-
-K_VALUES = range(3, 11)
-CMAP = plt.get_cmap("plasma", len(K_VALUES))   # one discrete color per k, shared by scatter and colorbar
+print_families("steps")
 
 
 def bsdfs(G, s, t, k, steps):
@@ -147,26 +135,6 @@ def total_steps(steps):
     return sum(steps[a] for a in ACCOUNTS)
 
 
-def gen_er(run):
-    rng = random.Random(42 + run)
-    n = rng.randint(6, 30)
-    m = int(n * math.exp(rng.uniform(0, math.log(n-1))))
-    G = nx.gnm_random_graph(n, m, directed=True, seed=rng)
-    s, t = rng.sample(list(G.nodes), 2)
-    return G, s, t
-
-
-def gen_ws(run):
-    rng = random.Random(73 + run)
-    n = 1000
-    d = 6
-    p = 0.2
-    H = nx.watts_strogatz_graph(n, d, p, seed=rng)
-    G = nx.DiGraph(H)
-    s, t = rng.sample(list(G.nodes), 2)
-    return G, s, t
-
-
 def print_totals(title, totals):
     print(f"\n--- {title}: elementary steps, BS-DFS relative to BC-DFS ---")
     print(f"{'k':>3} {'n':>6} {'BS steps':>14} {'BC steps':>14} {'bs/bc':>7}"
@@ -234,7 +202,7 @@ def make_ax(ax, title, graph_generator):
 
 
 def make_bars(ax, title, totals):
-    ks = list(K_VALUES)
+    ks = [k for k in K_VALUES if totals[k]["bc_total"]]   # skip k with no work recorded
     bottom_pos = np.zeros(len(ks)); bottom_neg = np.zeros(len(ks))
     for a, colour in zip(ACCOUNTS, (CMAP(2), CMAP(4), CMAP(6))):
         v = np.array([(totals[k][f"bs_{a}"] - totals[k][f"bc_{a}"]) / totals[k]["bc_total"]for k in ks])
@@ -247,24 +215,30 @@ def make_bars(ax, title, totals):
     ax.set_xlabel("hop bound $k$"); ax.set_title(title)
     ax.set_xticks(K_VALUES)
     ax.yaxis.set_major_formatter(PercentFormatter(xmax=1))
-    ax.set_ylim(-0.2, 2.0) # hand tuned
+    if not ks:
+        return 0.0, 0.0
+    return bottom_pos.max(), bottom_neg.min()   # caller sets a common y range
 
 
 def main():
     plt.rcParams.update({"pdf.fonttype": 42}) # Type 42 (TrueType) makes the figure text searchable and selectable
-    fig, axes = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
+    fig, axes = make_panels()
 
     fig.supxlabel("BC-DFS elementary steps per interval")
-    axes[0].set_ylabel("step ratio BS-DFS / BC-DFS")
+    for ax in axes[::COLS]:                      # leftmost panel of each row
+        ax.set_ylabel("step ratio BS-DFS / BC-DFS")
 
-    totals_er = make_ax(axes[0], "Erdős–Rényi", gen_er)
-    totals_ws = make_ax(axes[1], "Watts–Strogatz", gen_ws)
+    totals = [make_ax(ax, f.name, f.generate) for ax, f in zip(axes, FAMILIES)]
 
-    fig_bars, axes_bars = plt.subplots(1, 2, figsize=(5.9, 3), sharey=True, constrained_layout=True)
-    make_bars(axes_bars[0], "Erdős–Rényi", totals_er)
-    make_bars(axes_bars[1], "Watts–Strogatz", totals_ws)
+    fig_bars, axes_bars = make_panels()
+    spans = [make_bars(ax, f.name, t) for ax, f, t in zip(axes_bars, FAMILIES, totals)]
+    # one y range for all panels, tall enough for the highest stack (sharey=True,
+    # so setting it once is enough); the legend needs some headroom of its own
+    axes_bars[0].set_ylim(min(lo for _, lo in spans) - .1,
+                          max(hi for hi, _ in spans) * 1.15)
     axes_bars[0].legend(fontsize=7, frameon=False, loc="upper center", ncol=2)
-    axes_bars[0].set_ylabel("BS-DFS excess steps, rel. BC-DFS")
+    for ax in axes_bars[::COLS]:
+        ax.set_ylabel("BS-DFS excess steps, rel. BC-DFS")
 
     norm = BoundaryNorm(np.arange(min(K_VALUES)-.5, max(K_VALUES)+1.5, 1), CMAP.N)
 
@@ -275,8 +249,8 @@ def main():
     fig.savefig("steps.pdf", bbox_inches="tight")
     fig_bars.savefig("steps_bars.pdf", bbox_inches="tight")
 
-    print_totals("Erdős–Rényi", totals_er)
-    print_totals("Watts–Strogatz", totals_ws)
+    for f, t in zip(FAMILIES, totals):
+        print_totals(f.name, t)
 
 
 if __name__ == "__main__":

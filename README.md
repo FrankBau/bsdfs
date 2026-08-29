@@ -121,10 +121,12 @@ Demonstrating that the $O(k(n+m))$ delay bound can be broken in the loose and la
 
 | File | Produces |
 | --- | --- |
+| `graph_generator.py` | the random graph families all four figure experiments draw from, and the panel grid (two per row); run it directly to print the family size statistics |
 | `missed_paths.py` | the missed-path BC-DFS / BS-DFS ratios |
 | `steps.py` | the BS-DFS vs. BC-DFS step comparison |
 | `runtime.py` | the BC-DFS vs. BS-DFS runtime comparison |
 | `delay_bounds.py` | the measured delay, in units of (k+1)(n+m) |
+| `path_counts.py` | how many k-bounded paths the instances of each family actually have — a property of the instance, so BS-DFS is used only as the complete-enumeration oracle |
 | `loose_breaker_step_count.py`, `loose_breaker_x_assignments.py` | the loose/lazy delay-bound break |
 | `clique_trap.py` | the delay bounds converging to (k+1)(n+m)) |
 
