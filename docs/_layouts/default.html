@@ -1,41 +1,37 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>{{ page.title | default: site.title }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    {% seo %}
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   </head>
   <body>
-
-    <section class="page-header">
+    <header class="page-header" role="banner">
       <h1 class="project-name">{{ site.title }}</h1>
       <h2 class="project-tagline">{{ site.description }}</h2>
-    </section>
-
-    <section class="main-content">
-      {{ content }}
-    </section>
-
-    <!-- Footer hier einfügen -->
-    <footer class="site-footer">
-
       {% if site.github.is_project_page %}
-        <span class="site-footer-owner">
-          <a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a>
-          is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.
-        </span>
+        <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>
       {% endif %}
+    </header>
 
-      <span class="site-footer-owner">
-        Diese Webseite ist nicht kommerziell und dient ausschließlich dem Lernen und dem freien Austausch von Wissen.<br>
-        This website is non‑commercial and dedicated solely to learning and the free exchange of knowledge.
-      </span>
+    <main id="content" class="main-content" role="main">
+      {{ content }}
 
-      <span class="site-footer-credits">
-        Maintained by {{ site.github.owner_name }} — Cayman Theme — GitHub Pages
-      </span>
-
-    </footer>
-
+      <footer class="site-footer">
+        {% if site.github.is_project_page %}
+          <span class="site-footer-owner">
+            <a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a>
+            is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.
+          </span>
+        {% endif %}
+        <span class="site-footer-credits">
+          <span lang="de">Diese Webseite ist nicht kommerziell und dient ausschließlich dem Lernen und dem freien Austausch von Wissen.</span><br>
+          This website is non-commercial and dedicated solely to learning and the free exchange of knowledge.<br>
+          Built with the <a href="https://github.com/pages-themes/cayman">Cayman theme</a> for <a href="https://pages.github.com">GitHub Pages</a>.
+        </span>
+      </footer>
+    </main>
   </body>
 </html>
