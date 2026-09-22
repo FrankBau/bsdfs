@@ -1,4 +1,7 @@
-# BS-DFS implementation
+# Bounded Scope Depth-First Search
+
+Python translation of the pseudocode in our paper.
+This algorithm extends [dldfs](dldfs.md) and [bbdfs](bbdfs.md), avoiding their pitfalls.
 
 ```python
 from collections import deque
