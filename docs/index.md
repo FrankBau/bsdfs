@@ -60,3 +60,12 @@ the following is proven:
 
 - the worst-case delay to the next event (output, termination) is at most 3(k+1)(n+m) steps, and
 - for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps, i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
+
+
+# Motivation
+
+If only the first s-t path P0 of length ≤ k is wanted (or only its existence), a depth-limited depth-first search suffices. Its problem is that it searches the same vertices over and over again. For example, let `s` lie in a large clique from which `t` is reachable, but only via a path longer than `k`. Then all paths of length ≤ k inside the clique are explored fruitlessly.
+
+ Hence each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. Let `h` denote the length of the current search path from `s` to `v`. If `search(v)` finds no path to `t`, the barrier is raised to `b[v] = k - h + 1`. The search descends from `v` into a successor `w` only if `b[w] + h < k`. This suppresses repeated searches of `v` at the same or a greater depth. In this phase barriers only increase. Each vertex is entered at most k+1 times, so the total work is bounded by (k+1)(n+m).
+
+When more paths than P0 are wanted, we want to reuse the barriers already established. But a formerly fruitless search may become fruitful once vertices are popped from the search path, because they no longer block. So barriers raised with respect to an earlier search path may need correction. This is done by the `fruitful` procedure, and it must be done carefully. Resetting all barriers to 0 keeps the algorithm correct but throws away the work already spent, and the delay bounds no longer hold. Instead, `b[v]` is set to `sd`, the length of the shortest path to `t` found from `v`. The barriers of its direct and indirect predecessors are then repaired, walking backwards over in-edges, to restore **edge-consistency**, a property defined and discussed in the paper.
