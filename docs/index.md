@@ -1,6 +1,4 @@
-A graph algorithm for enumerating all length bounded simple paths or cycles.
-
-This is a short intro to the [BS-DFS](bsdfs.md) algorithm from our paper: 
+A short intro to the [BS-DFS](bsdfs.md) algorithm from our paper: 
 
 > Frank Bauernöppel, Jörg-Rüdiger Sack; "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with O(k(n+m)) Delay Using Edge-Consistent Node Barriers"; [https://doi.org/10.48550/arXiv.2607.14745](https://doi.org/10.48550/arXiv.2607.14745); submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/)
 
