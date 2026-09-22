@@ -33,21 +33,21 @@ prints 3 paths
 [0, 2, 3, 4]
 [0, 2, 4]
 ```
-The output order depends on the adjacency-list order.
 
 Path `[0, 1, 2, 3, 4]` is too long to be reported for `k = 3`.
-If we set `k = 4`, it will be reported too.
+If we set `k = 4`, it will be reported as well.
+The output order depends on the adjacency-list order of the internal graph representation.
 
 
 # Efficiency - The Delay Bounds
 
-The number of paths or cycles can grow exponentially in the graph size.
+The number of length-bounded paths or cycles can grow exponentially in the graph size.
 Luckily, `bsdfs` is implemented as a generator function and can be stopped whenever "enough" paths are generated.
-But: how long to wait?
+But: how long to wait for a (next) output or termination?
 
-Let's call the start, each path generation (output), and termination the *events* of the algorithm.
-Then, the algorithm guarantees that the delay (waiting time) between two consecutive events is bounded by O(k(n+m)).
-Here, n=|V| the number of vertices in G, and m=|E| the number of edges in G.
+Let's call the start, each path generation (output), and the termination the *events* of a call `bsdfs(G, s, t, k)`.
+Then, the delay (waiting time) between two consecutive events is bounded by O(k(n+m)).
+Here, n=|V| is the number of vertices and m=|E| is the number of edges in G.
 So, for any fixed k, the delay is linear in the graph size.
 
 As shown in our paper, the Big-O formulation does not hide huge constants.
@@ -55,21 +55,24 @@ With a suitable definition of elementary steps (node visits, edge scans, barrier
 the following is proven:
 
 - the worst-case delay between two consecutive events is at most 3(k+1)(n+m) steps, and
-- for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps, i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
+- for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps,
+  i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
 
 
 # Motivation
 
 If only the first s-t path P0 of length ≤ k is wanted (or only its existence), a [depth-limited depth-first search](dldfs.md) will eventually find it.
-Its problem is that it searches the same vertices over and over again.
+The problem is that this searches the same vertices over and over again when re-visited.
 For example, let `s` lie in a large clique from which `t` is reachable via a single `(s, t)` edge which comes last in the adjacency list of `s`.
-Then all paths of length ≤ k inside the clique are fruitlessly explored before edge `(s, t)` is finally found.
+Then all paths of length ≤ k inside the clique are fruitlessly explored before the edge and hence the path `(s, t)` is finally found.
 
-To improve, each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. 
-Let `h` denote the length of the current search path from `s` to `v`.
-If `search(v)` finds no path to `t`, the barrier is raised to `b[v] = k - h + 1`.
-The search descends from `v` into a successor `w` only if `b[w] + h < k`.
-This suppresses repeated searches of `v` at the same or a greater depth.
+To speed-up the enumeration, each vertex `x` gets a barrier `b[x]`, a lower bound on the remaining distance from `x` to `t`. 
+Let `h` denote the length of the current search path from `s` to `x`.
+If `search(x)` finds no path to `t`, the barrier is raised to `b[x] = k - h + 1`.
+When some later `search(v)` with search path length `h'` scans the same node `x` in its successor loop,
+the entry condition `if b[x] + h' < k` ensures that `search(x)` is called 
+only if the new search path length `h' + 1` for `x` is smaller than `h`;
+i.e. if that later search arrives at `x` with more budget left to reach `t`. 
 In this phase barriers only increase.
 Each vertex is entered at most k+1 times, so the total work for finding P0 is bounded by (k+1)(n+m). 
 For code, see [bbdfs](bbdfs.md).
