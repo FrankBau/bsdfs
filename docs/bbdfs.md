@@ -1,5 +1,10 @@
 # Barrier Bounded Depth-First Search
 
+Half-way improvement of [dlbfs](dlbfs.md).
+Finds correctly the first path (or returns None) in O(k(n+m) time by maintaining barriers.
+May miss output after the first path due to stale barrier vaules.
+See [bsdfs](bsdfs.md) for correction.
+
 ```python
 def bbdfs(G, s, t, k):
     """barrier bounded DFS"""
