@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ page.title | default: site.title }}</title>
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+  </head>
+  <body>
+
+    <section class="page-header">
+      <h1 class="project-name">{{ site.title }}</h1>
+      <h2 class="project-tagline">{{ site.description }}</h2>
+    </section>
+
+    <section class="main-content">
+      {{ content }}
+    </section>
+
+    <footer class="site-footer">
+      <p><strong>Diese Webseite ist nicht kommerziell und dient ausschließlich dem Lernen und dem freien Austausch von Wissen.</strong></p>
+      <p><strong>This website is non‑commercial and dedicated solely to learning and the free exchange of knowledge.</strong></p>
+
+      <p>Maintained by {{ site.github.owner_name }}.</p>
+      <p>Generated with GitHub Pages using the Cayman theme.</p>
+    </footer>
+
+  </body>
+</html>
