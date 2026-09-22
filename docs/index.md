@@ -43,9 +43,9 @@ If we set `k = 4`, it will be reported too.
 
 The number of paths or cycles can grow exponentially in the graph size.
 Luckily, `bsdfs` is implemented as a generator function and can be stopped whenever "enough" paths are generated.
-But: how long to wait for that?
+But: how long to wait?
 
-Let's call the algo start, each path generation (output), and algo termination an event.
+Let's call the start, each path generation (output), and termination the *events* of the algorithm.
 Then, the algorithm guarantees that the delay (waiting time) between two consecutive events is bounded by O(k(n+m)).
 Here, n=|V| the number of vertices in G, and m=|E| the number of edges in G.
 So, for any fixed k, the delay is linear in the graph size.
@@ -54,7 +54,7 @@ As shown in our paper, the Big-O formulation does not hide huge constants.
 With a suitable definition of elementary steps (node visits, edge scans, barrier writes, output),
 the following is proven:
 
-- the worst-case delay to the next event (output, termination) is at most 3(k+1)(n+m) steps, and
+- the worst-case delay between two consecutive events is at most 3(k+1)(n+m) steps, and
 - for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps, i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
 
 
