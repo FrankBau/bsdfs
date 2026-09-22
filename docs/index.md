@@ -17,10 +17,9 @@ For coding, we use [Python](https://www.python.org/) and the [NetworkX](https://
 For simplicity, we consider directed simple graphs (no self-loops, no parallel edges) here,
 but the algorithm can be adapted to multigraphs and undirected graphs
 
-
 # Example
 
-The following code
+With the [BS-DFS implementation](bsdfs.md), the code
 ```python
 import networkx as nx
 G = nx.DiGraph()
