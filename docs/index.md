@@ -11,7 +11,7 @@ For the special case `s==t`, simple cycles through vertex `s` will be enumerated
 For graph terminology, we follow the book [Algorithms, 4th Edition by Robert Sedgewick and Kevin Wayne](https://algs4.cs.princeton.edu/).
 For coding, we use [Python](https://www.python.org/) and the [NetworkX](https://networkx.org/) graph library.
 For simplicity, we consider directed simple graphs (no self-loops, no parallel edges) here,
-but the algorithm can be adapted to multigraphs and undirected graphs
+but the algorithm can be adapted to multigraphs and undirected graphs.
 
 # Example
 
@@ -85,6 +85,6 @@ This is done by the `fruitful` procedure, and it must be done carefully.
 Resetting all barriers to 0 when a node is popped keeps the algorithm correct
 but throws away the work already spent, and the delay bounds no longer hold.
 Instead, `b[v]` is set to `sd`, the length of the shortest path to `t` found from `v` with respect to the current search path.
-The barriers of its direct and indirect predecessors are then repaired, walking backwards over in-edges. 
-But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper 
+The barriers of its direct and indirect predecessors are then decreased, walking backwards over in-edges. 
+But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper.
 Informally: a vertex's barrier may exceed that of its successors by at most one. This is [bsdfs](bsdfs.md).
