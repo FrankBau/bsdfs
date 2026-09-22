@@ -60,12 +60,12 @@ the following is proven:
 
 # Motivation
 
-If only the first s-t path P0 of length ≤ k is wanted (or only its existence), a [depth-limited depth-first search](dldfs.md) suffices.
+If only the first s-t path P0 of length ≤ k is wanted (or only its existence), a [depth-limited depth-first search](dldfs.md) will eventually find it.
 Its problem is that it searches the same vertices over and over again.
 For example, let `s` lie in a large clique from which `t` is reachable via a single `(s, t)` edge which comes last in the adjacency list of `s`.
-Then all paths of length ≤ k inside the clique are explored fruitlessly before finally edge `(s, t)` is found.
+Then all paths of length ≤ k inside the clique are fruitlessly explored before edge `(s, t)` is finally found.
 
-Hence each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. 
+To improve, each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. 
 Let `h` denote the length of the current search path from `s` to `v`.
 If `search(v)` finds no path to `t`, the barrier is raised to `b[v] = k - h + 1`.
 The search descends from `v` into a successor `w` only if `b[w] + h < k`.
