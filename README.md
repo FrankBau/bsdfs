@@ -8,16 +8,17 @@ Companion to
 submitted to JGAA.
 Preprint: https://arxiv.org/abs/2607.14745
 
+A short introduction is given in https://frankbau.github.io/bsdfs/.
 
 # Simple s-t Path Enumeration
 
 `bsdfs(G, s, t, k)` enumerates all length $k$ bounded simple paths 
 from node $s$ to node $t$ in the directed graph $G$. 
-The delay is $O(k(n+m))$ per output with small constants.
+The worst-case and the amortized delay is $O(k(n+m))$ with small constants.
 
-It can replace `BC-DFS` which has issues, see the preprint and upcoming paper.
+BS-DFS can replace BC-DFS which has issues, see the preprint and upcoming paper.
 
-The original `BC-DFS` algorithm was translated from
+The BC-DFS Python code was translated from
 
     author       = {Peng, You and Lin, Xuemin and Zhang, Ying and Zhang, Wenjie and Qin, Lu and Zhou, Jingren},
     title        = {Efficient Hop-constrained s-t Simple Path Enumeration},
@@ -48,9 +49,9 @@ and
     pages      = {463-476},
     numpages   = {14}
 
-where `BC-DFS` was introduced and appears in pseudocode.
+where BC-DFS is introduced and appears in pseudocode.
 
-Caution: `BC-DFS` is not complete: it can miss some output; 
+Caution: BC-DFS is not complete: it can miss some output; 
 and its delay is unknown, as explained in our paper.
 
 
@@ -58,9 +59,9 @@ and its delay is unknown, as explained in our paper.
 
 `bsdfs(G, s, s, k)` enumerates all length $k$ bounded simple cycles 
 containing node $s$ in the directed graph $G$.
-The delay is $O(k(n+m))$ per output with small constants.
+The worst-case and the amortized delay is $O(k(n+m))$ with small constants.
 
-It can replace `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.08392:
+BS-DFS can replace CYCLE_SEARCH which has issues, see https://arxiv.org/abs/2512.08392:
 
     title         = {Finding All Bounded-Length Simple Cycles in a Directed Graph -- Revisited},
     author        = {Frank Bauernöppel and Jörg-Rüdiger Sack},
@@ -68,22 +69,21 @@ It can replace `CYCLE_SEARCH` which has issues, see https://arxiv.org/abs/2512.0
     eprint        = {2512.08392},
     doi           = {10.48550/arXiv.2512.08392},
 
-
-The original `CYCLE_SEARCH` algorithm was translated from https://arxiv.org/abs/2105.10094
+The CYCLE_SEARCH Python code was translated from https://arxiv.org/abs/2105.10094
 
     title      = {Finding All Bounded-Length Simple Cycles in a Directed Graph},
     author     = {Anshul Gupta and Toyotaro Suzumura},
     year       = {2021},
     doi        = {10.48550/arXiv.2105.10094},
 
-where `CYCLE_SEARCH` was introduced and appears in pseudocode.
+where CYCLE_SEARCH is introduced and appears in pseudocode.
 
-Caution: `CYCLE_SEARCH` is not complete: it can miss some output;
+Caution: CYCLE_SEARCH is not complete: it can miss some output;
 and its delay is unknown, as explained in our preprint.
 
 
 # Graph Family loose_breaker(k)
-Demonstrating that the $O(k(n+m))$ delay bound can be broken in the loose and lazy schemes.
+Demonstrating that the $O(k(n+m))$ delay bound can be broken in the alternative loose and lazy schemes.
 
 
 # Repository Layout
