@@ -1,10 +1,13 @@
 <footer class="site-footer">
-  <span class="site-footer-owner">
-    <strong>Diese Webseite ist nicht kommerziell und dient ausschließlich dem Lernen und dem freien Austausch von Wissen.</strong><br>
-    <strong>This website is non‑commercial and dedicated solely to learning and the free exchange of knowledge.</strong>
-  </span>
+  {% if site.github.is_project_page %}
+    <span class="site-footer-owner"><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a> is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span>
+  {% endif %}
 
   <span class="site-footer-credits">
+    Diese Webseite ist nicht kommerziell und dient ausschließlich dem Lernen und dem freien Austausch von Wissen.
+    
+    This website is non‑commercial and dedicated solely to learning and the free exchange of knowledge.
+
     Maintained by {{ site.github.owner_name }} —
     Theme: Cayman — Generated with GitHub Pages
   </span>
