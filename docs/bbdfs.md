@@ -1,7 +1,7 @@
 # Barrier Bounded Depth-First Search
 
 Half-way improvement of [dldfs](dldfs.md).
-Finds correctly the first path (or returns None) in O(k(n+m) time by maintaining barriers.
+Finds correctly the first path (or returns None) in O(k(n+m)) time by maintaining barriers.
 May miss output after the first path due to stale barrier vaules.
 See [bsdfs](bsdfs.md) for correction.
 
