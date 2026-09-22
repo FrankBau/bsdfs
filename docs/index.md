@@ -62,7 +62,7 @@ the following is proven:
 # Motivation
 
 If only the first s-t path P0 of length ≤ k is wanted (or only its existence), a [depth-limited depth-first search](dldfs.md) will eventually find it.
-The problem is that this searches the same vertices over and over again when re-visited.
+The problem is that this search recurses over and over again when a vertex is re-visited.
 For example, let `s` lie in a large clique from which `t` is reachable via a single `(s, t)` edge which comes last in the adjacency list of `s`.
 Then all paths of length ≤ k inside the clique are fruitlessly explored before the edge and hence the path `(s, t)` is finally found.
 
@@ -77,5 +77,12 @@ In this phase barriers only increase.
 Each vertex is entered at most k+1 times, so the total work for finding P0 is bounded by (k+1)(n+m). 
 For code, see [bbdfs](bbdfs.md).
 
-When more paths than P0 are wanted, we want to reuse the barriers already established. But a formerly fruitless search may become fruitful once vertices are popped from the search path, because they no longer block. So barriers raised with respect to an earlier search path may need correction. This is done by the `fruitful` procedure, and it must be done carefully. Resetting all barriers to 0 keeps the algorithm correct but throws away the work already spent, and the delay bounds no longer hold. Instead, `b[v]` is set to `sd`, the length of the shortest path to `t` found from `v`.
-The barriers of its direct and indirect predecessors are then repaired, walking backwards over in-edges, only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper (informally: a vertex's barrier may exceed that of its successors by at most one).
+Now, when more paths than P0 are requested, the barriers already established shall be reused.
+But a formerly fruitless search may become fruitful once vertices are popped from the search path, because they no longer block.
+So barriers raised with respect to an earlier search path may need correction.
+This is done by the `fruitful` procedure, and it must be done carefully.
+Resetting all barriers to 0 keeps the algorithm correct but throws away the work already spent, and the delay bounds no longer hold.
+Instead, `b[v]` is set to `sd`, the length of the shortest path to `t` found from `v`.
+The barriers of its direct and indirect predecessors are then repaired, walking backwards over in-edges. 
+But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper 
+(informally: a vertex's barrier may exceed that of its successors by at most one).
