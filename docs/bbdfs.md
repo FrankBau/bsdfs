@@ -26,6 +26,8 @@ def bbdfs(G, s, t, k):
     yield from search(s)
 
 if __name__ == "__main__":
+    from bsdfs import bsdfs
+
     c = 100
     G = nx.complete_graph(c, create_using=nx.DiGraph)
     s = 0
@@ -35,4 +37,15 @@ if __name__ == "__main__":
 
     P0 = next(bbdfs(G, s, t, k), None) # get first path fast, like bsdfs
     print("bbdfs:", P0)
+
+    # an example where bbdfs misses a path after the first
+    G = nx.DiGraph()
+    G.add_edges_from([(0, 1), (0, 5), (1, 2), (1, 4), (5, 2), (2, 3), (2, 4), (3, 1)])
+    s = 0
+    t = 4
+    k = 4
+    paths = list(bbdfs(G, s, t, 4))
+    print(f"bbdfs: {paths=}") # output [[0, 1, 2, 4], [0, 1, 4]]
+    paths = list(bsdfs(G, s, t, 4))
+    print(f"bsdfs: {paths=}") # output [[0, 1, 2, 4], [0, 1, 4], [0, 5, 2, 4]]
 ```
