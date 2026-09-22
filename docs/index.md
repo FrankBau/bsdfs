@@ -65,7 +65,14 @@ Its problem is that it searches the same vertices over and over again.
 For example, let `s` lie in a large clique from which `t` is reachable via a single `(s, t)` edge which comes last in the adjacency list of `s`.
 Then all paths of length ≤ k inside the clique are explored fruitlessly before finally edge `(s, t)` is found.
 
- Hence each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. Let `h` denote the length of the current search path from `s` to `v`. If `search(v)` finds no path to `t`, the barrier is raised to `b[v] = k - h + 1`. The search descends from `v` into a successor `w` only if `b[w] + h < k`. This suppresses repeated searches of `v` at the same or a greater depth. In this phase barriers only increase. Each vertex is entered at most k+1 times, so the total work is bounded by (k+1)(n+m).
+Hence each vertex `v` gets a barrier `b[v]`, a lower bound on the remaining distance from `v` to `t`. 
+Let `h` denote the length of the current search path from `s` to `v`.
+If `search(v)` finds no path to `t`, the barrier is raised to `b[v] = k - h + 1`.
+The search descends from `v` into a successor `w` only if `b[w] + h < k`.
+This suppresses repeated searches of `v` at the same or a greater depth.
+In this phase barriers only increase.
+Each vertex is entered at most k+1 times, so the total work for finding P0 is bounded by (k+1)(n+m). 
+For code, see [bbdfs](bbdfs.md).
 
 When more paths than P0 are wanted, we want to reuse the barriers already established. But a formerly fruitless search may become fruitful once vertices are popped from the search path, because they no longer block. So barriers raised with respect to an earlier search path may need correction. This is done by the `fruitful` procedure, and it must be done carefully. Resetting all barriers to 0 keeps the algorithm correct but throws away the work already spent, and the delay bounds no longer hold. Instead, `b[v]` is set to `sd`, the length of the shortest path to `t` found from `v`.
 The barriers of its direct and indirect predecessors are then repaired, walking backwards over in-edges, only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper (informally: a vertex's barrier may exceed that of its successors by at most one).
