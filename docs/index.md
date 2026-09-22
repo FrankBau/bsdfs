@@ -1,8 +1,8 @@
-**BS-DFS** (Bounded Scope Depth-First Search) - a graph algorithm for enumerating all length bounded simple paths or cycles.
+A graph algorithm for enumerating all length bounded simple paths or cycles.
 
-This is a short intro to the BS-DFS algorithm from our paper: 
+This is a short intro to the [BS-DFS](bsdfs.md) algorithm from our paper: 
 
-> Frank Bauernöppel, Jörg-Rüdiger Sack; "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with O(k(n+m)) Delay Using Edge-Consistent Node Barriers"; https://doi.org/10.48550/arXiv.2607.14745; submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/)
+> Frank Bauernöppel, Jörg-Rüdiger Sack; "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with O(k(n+m)) Delay Using Edge-Consistent Node Barriers"; [https://doi.org/10.48550/arXiv.2607.14745](https://doi.org/10.48550/arXiv.2607.14745); submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/)
 
 
 # Basics
@@ -11,9 +11,7 @@ A call `bsdfs(G, s, t, k)` enumerates all simple paths in graph `G` starting at 
 For the special case `s==t`, simple cycles through vertex `s` will be enumerated. This includes cycles of length 2 which are excluded in some literature.
 
 For graph terminology, we follow the book [Algorithms, 4th Edition by Robert Sedgewick and Kevin Wayne](https://algs4.cs.princeton.edu/).
-
 For coding, we use [Python](https://www.python.org/) and the [NetworkX](https://networkx.org/) graph library.
-
 For simplicity, we consider directed simple graphs (no self-loops, no parallel edges) here,
 but the algorithm can be adapted to multigraphs and undirected graphs
 
