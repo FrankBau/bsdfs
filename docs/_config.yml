@@ -1,3 +1,3 @@
 theme: jekyll-theme-cayman
-title: Bounded Scope Depth-First Search
+title: Bounded Scope Depth-First Search (BS-DFS)
 description: A graph algorithm for enumerating all length bounded simple paths or cycles.

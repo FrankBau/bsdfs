@@ -3,7 +3,7 @@ A short intro to the [BS-DFS](bsdfs.md) algorithm from our [preprint](https://do
 > Frank Bauernöppel, Jörg-Rüdiger Sack;
 > "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with O(k(n+m)) Delay Using Edge-Consistent Node Barriers"
 
-submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/)
+submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/).
 
 
 # Basics
@@ -46,7 +46,7 @@ The output order depends on the adjacency-list order of the internal graph repre
 
 # Efficiency - The Delay Bounds
 
-The number of length-bounded paths or cycles can grow exponentially in the graph size.
+The number of length-bounded paths or cycles can grow exponentially in the graph size, even for fixed k.
 Luckily, `bsdfs` is implemented as a generator function and can be stopped whenever "enough" paths have been generated.
 But: how long do we have to wait for the next output or termination?
 
@@ -63,6 +63,8 @@ the following is proven:
 - for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps,
   i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
 
+In benchmark tests, even smaller constants were observed.
+
 
 # Motivation
 
@@ -74,7 +76,7 @@ For example, let `s` lie in a large clique from which `t` is reachable via a sin
 Then all paths of length ≤ k inside the clique are fruitlessly explored before the edge and hence the path `(s, t)` is finally found.
 
 To avoid repeated fruitless searches, each vertex `x` gets a barrier `b[x]`,
-a lower bound on the remaining distance from `x` to `t`. See [bbdfs](bbdfs.md).
+initially 0, see [bbdfs](bbdfs.md).
 Let `h` denote the length of the current search path from `s` to `x`.
 If `search(x)` finds no path to `t`, the barrier is raised to `b[x] = k - h + 1`.
 When some later `search(y)` with search path length `h'` scans the same vertex `x` in its successor loop,
@@ -95,6 +97,5 @@ Resetting all barriers to 0 when a vertex `v` is popped keeps the algorithm corr
 but throws away the work already spent, and the delay bounds no longer hold.
 Instead, `b[v]` is set to `sd`,
 the length of the shortest path to `t` found from `v` with respect to the now-current search path.
-The barriers of its direct and indirect predecessors are then decreased by walking backwards over in-edges,
-but only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper
-and shown in the code.
+The barriers of its direct and indirect predecessors are then decreased by walking backwards over in-edges in the `fruitful` procedure.
+But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper.
