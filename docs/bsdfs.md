@@ -9,46 +9,46 @@ from collections import deque
 def bsdfs(G, s, t, k):
     """Enumerate all simple s-t paths of length at most k in G."""
 
-    b = {x: 0 for x in G.nodes}             # init barriers
-    S = []                                  # current search path
+    b = {x: 0 for x in G.nodes}                 # init barriers
+    S = []                                      # current search path
 
 
     def cascade(v, sd):
         """Distance propagation (reverse BFS)."""
 
-        Q = deque([(v, sd)])                # init BFS worklist
+        Q = deque([(v, sd)])                    # initialize worklist
         while Q:
-            q, d = Q.popleft()              # dequeue next item
+            q, d = Q.popleft()                  # dequeue next item
             for p in G.predecessors(q):
-                # predecessor scan
+                                                # predecessor scan
                 if p not in S and b[p] > d + 1:
-                    b[p] = d + 1            # drop barrier
-                    Q.append((p, d + 1))    # propagate further
+                    b[p] = d + 1                # drop barrier
+                    Q.append((p, d + 1))        # propagate further
 
 
     def search(v):
         """Recursive bounded-scope DFS from node v."""
 
-        S.append(v)                 # entry
-        h = len(S) - 1              # h = number of edges in S
+        S.append(v)                             # entry
+        h = len(S) - 1                          # number of edges in S
 
-        # sd = shortest distance v to t found w.r.t. S
-        sd = k + 1                  # nothing found sentinel (inf)
+        # shortest v-t distance w.r.t. current path S
+        sd = k + 1                              # "infinity" (no path found yet)
         for w in G.successors(v):
-            # successor scan
-            if b[w] + h < k:        # is w admissible?
+                                                # successor scan
+            if b[w] + h < k:                    # is w admissible?
                 if w == t:
-                    yield S + [t]   # output
-                    sd = 1          # edge (v,t)
-                elif w not in S:    # no duplicates in S
+                    yield S + [t]               # output, report path
+                    sd = 1                      # edge (v,t)
+                elif w not in S:                # keep simplicity of S
                     d = yield from search(w)    # descend into w
-                    sd = min(sd, d + 1)
+                    sd = min(sd, d + 1)         # shortest distance wins
 
-        if sd <= k:                 # any path to t found?
-            b[v] = sd               # fruitful, update barrier
-            cascade(v, sd)          # repair edge-consistency
+        if sd <= k:                             # any path to t found?
+            b[v] = sd                           # fruitful, update barrier
+            cascade(v, sd)                      # repair edge-consistency
         else:
-            b[v] = k + 1 - h        # fruitless, raise barrier
+            b[v] = k + 1 - h                    # fruitless, raise barrier
 
         S.pop()
         return sd
