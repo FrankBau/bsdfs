@@ -6,6 +6,7 @@ This algorithm extends [dldfs](dldfs.md) and [bbdfs](bbdfs.md), avoiding their p
 ```python
 from collections import deque
 
+
 def bsdfs(G, s, t, k):
     """Enumerate all simple s-t paths of length at most k in G."""
 
@@ -27,7 +28,7 @@ def bsdfs(G, s, t, k):
 
 
     def search(v):
-        """Recursive bounded-scope DFS from node v."""
+        """Recursive bounded-scope DFS."""
 
         S.append(v)                             # entry
         h = len(S) - 1                          # number of edges in S
@@ -59,7 +60,6 @@ def bsdfs(G, s, t, k):
 Note: Several optimizations are useful but not shown for clarity.
 
 
-
 # Directed triangular snake graph example
 
 Path 0→1→…→2d plus shortcuts 2i→2i+2; the two-edge leg comes first in adjacency order.
@@ -88,4 +88,5 @@ tock = time.perf_counter()
 print(f"dldfs {tock-tick:10.8f}s:", P0)
 ```
 
-Both outputs are correct. Bounded-Scope DFS took 0.00047s, plain depth-limited DFS needs more than 5s (i7-14700K Win11).
+Both outputs are correct.
+Bounded-Scope DFS took 0.00047s, plain depth-limited DFS needs more than 5s (i7-14700K, 64GB, Win11).

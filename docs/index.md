@@ -55,15 +55,14 @@ Then, the delay (waiting time) between two consecutive events is bounded by O(k(
 Here, n=|V| is the number of vertices and m=|E| is the number of edges in G.
 So, for any fixed k, the delay is linear in the graph size.
 
-As shown in our paper, the Big-O formulation does not hide huge constants.
 With a suitable definition of elementary steps (vertex visits, edge scans, barrier writes, output),
-the following is proven:
+the following is proven in our paper:
 
 - the worst-case delay between two consecutive events is at most 3(k+1)(n+m) steps, and
 - for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps,
   i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
 
-In benchmark tests, even smaller constants were observed.
+In benchmark tests, the observed delays were typically well below these theoretical bounds.
 
 
 # Motivation
