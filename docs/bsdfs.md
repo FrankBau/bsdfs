@@ -9,21 +9,22 @@ from collections import deque
 def bsdfs(G, s, t, k):
     """Enumerate all simple s-t paths of length at most k in G."""
 
-    b = {x: 0 for x in G.nodes}         # init barriers
-    S = []                              # current search path
+    b = {x: 0 for x in G.nodes}             # init barriers
+    S = []                                  # current search path
+
 
     def cascade(v, sd):
-        """Repairing Edge-Consistency by reverse BFS."""
+        """Distance propagation (reverse BFS)."""
 
-        queue = deque([(v, sd)])        # start at v
-        while queue:
-            # dequeue
-            q, d = queue.popleft()
+        Q = deque([(v, sd)])                # init BFS worklist
+        while Q:
+            q, d = Q.popleft()              # dequeue next item
             for p in G.predecessors(q):
                 # predecessor scan
                 if p not in S and b[p] > d + 1:
-                    b[p] = d + 1        # drop barrier
-                    queue.append((p, d + 1))
+                    b[p] = d + 1            # drop barrier
+                    Q.append((p, d + 1))    # propagate further
+
 
     def search(v):
         """Recursive bounded-scope DFS from node v."""
@@ -45,7 +46,7 @@ def bsdfs(G, s, t, k):
 
         if sd <= k:                 # any path to t found?
             b[v] = sd               # fruitful, update barrier
-            cascade(v, sd)
+            cascade(v, sd)          # repair edge-consistency
         else:
             b[v] = k + 1 - h        # fruitless, raise barrier
 
