@@ -1,0 +1,21 @@
+---
+---
+
+@import 'jekyll-theme-cayman';   // docs/_sass/jekyll-theme-cayman.scss: the theme without the Google Fonts import
+
+// Wide block: breaks out of Cayman's content column (52rem) and grows with the window,
+// up to 1920px, where the 1920x1080 animation is shown 1:1.
+.wide {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100vw - 2rem);
+  max-width: 1920px;
+  margin: 1rem 0;
+}
+
+.wide video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
