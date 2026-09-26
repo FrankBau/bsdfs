@@ -105,9 +105,8 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 # BS-DFS in Action
 
 ```python
-  Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c', 't'], create_using=nx.DiGraph)
-  s, t, k = = "s", "t", 5
-  list(bsdfs(Z, s, t, k))
+  Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c'], create_using=nx.DiGraph)
+  list(bsdfs(Z, "s", "t", 5))
 ```
 
 <video controls playsinline preload="metadata" width="800">
