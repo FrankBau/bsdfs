@@ -104,7 +104,7 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 
 # BS-DFS in Action
 
-<video controls playsinline preload="metadata">
+<video controls playsinline preload="metadata" width="800">
   <source src="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}" type="video/mp4">
   <a href="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
 </video>
@@ -112,10 +112,8 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 
 # BS-DFS in Competition
 
-<video id="anim" controls>
-{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}
-</video>
- 
-<button onclick="document.getElementById('anim').requestPictureInPicture()">
-Pop out video
+<video id="v" controls width="600">
+<source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}"
+n onclick="v.requestFullscreen()">
+Fullscreen
 </button>
