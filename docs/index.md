@@ -102,12 +102,20 @@ The barriers of its direct and indirect predecessors are then decreased by walki
 But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper.
 
 
-# Demo - Competition
+# BS-DFS in Action
 
-<div class="wide">
 <video controls playsinline preload="metadata">
-  <source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}" type="video/mp4">
-  <a href="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
+  <source src="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}" type="video/mp4">
+  <a href="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
 </video>
-</div>
 
+
+# BS-DFS in Competition
+
+<video id="anim" controls>
+{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}
+</video>
+ 
+<button onclick="document.getElementById('anim').requestPictureInPicture()">
+Pop out video
+</button>
