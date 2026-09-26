@@ -109,7 +109,6 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
   list(bsdfs(Z, "s", "t", 5))
 ```
 
-</p>
 <video controls playsinline preload="metadata" width="800">
   <source src="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}" type="video/mp4">
   <a href="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
