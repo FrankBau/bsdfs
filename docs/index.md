@@ -109,7 +109,7 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
   list(bsdfs(Z, "s", "t", 5))
 ```
 
-<video class="video-full" controls playsinline preload="metadata">
+<video controls playsinline preload="metadata" style="width:100%; height:auto;">
   <source src="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}" type="video/mp4">
   <a href="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
 </video>
@@ -117,7 +117,7 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 
 # BS-DFS in Competition
 
-<video class="video-full" controls playsinline preload="metadata">
+<video controls playsinline preload="metadata" style="width:100%; height:auto;">
   <source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}" type="video/mp4">
   <a href="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
 </video>
