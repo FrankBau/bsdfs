@@ -104,6 +104,7 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 
 # Demo
 
-<video controls width="1080">
-    /assets/videos/bsdfs_calls_N14_seed88_k5.mp4
+<video controls playsinline preload="metadata" style="width:100%; height:auto;">
+  <source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}" type="video/mp4">
+  <a href="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}">Download the animation (MP4, 3 MB)</a>
 </video>
