@@ -51,7 +51,7 @@ Luckily, `bsdfs` is implemented as a generator function and can be stopped whene
 But: how long do we have to wait for the next output or termination?
 
 Let's call the start, each path generation (output), and the termination the *events* of a call `bsdfs(G, s, t, k)`.
-Then, the delay (waiting time) between two consecutive events is bounded by O(k(n+m)).
+Then, the *delay* (waiting time between two consecutive events) is bounded by O(k(n+m)).
 Here, n=|V| is the number of vertices and m=|E| is the number of edges in G.
 So, for any fixed k, the delay is linear in the graph size.
 
@@ -71,8 +71,10 @@ A depth-first search will eventually enumerate all s-t paths or s-cycles.
 If the search depth is limited to k (see [dldfs](dldfs.md)), length-bounded
 s-t paths or s-cycles will be enumerated.
 The problem is that this kind of search recurses over and over again when a vertex is revisited.
-For example, let `s` lie in a large clique from which `t` is reachable via a single `(s, t)` edge which comes last in the adjacency list of `s`.
-Then all paths of length ≤ k inside the clique are fruitlessly explored before the edge and hence the path `(s, t)` is finally found.
+For example, let `s` lie in a large clique from which `t` is reachable via a single edge `(s, t)` which comes last in the adjacency list of `s`.
+Then all search paths of length ≤ k inside the clique are fruitlessly explored
+*before* edge (s, t) is scanned and the path (s, t) is reported.
+The number of such search paths, and hence the delay until the first output, can be exponential in the clique size.
 
 To avoid repeated fruitless searches, each vertex `x` gets a barrier `b[x]`,
 initially 0, see [bbdfs](bbdfs.md).
@@ -98,3 +100,10 @@ Instead, `b[v]` is set to `sd`,
 the length of the shortest path to `t` found from `v` with respect to the now-current search path.
 The barriers of its direct and indirect predecessors are then decreased by walking backwards over in-edges in the `fruitful` procedure.
 But only as far as needed to restore *edge-consistency*, a property defined and discussed in the paper.
+
+
+# Demo
+
+<video controls width="1080">
+    /assets/videos/bsdfs_calls_N14_seed88_k5.mp4
+</video>

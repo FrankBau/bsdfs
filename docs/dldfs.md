@@ -11,14 +11,14 @@ def dldfs(G, s, t, k):
     S = [] # current search path (stack)
 
     def search(v):
-        S.append(v)
-        h = len(S) - 1  # number of edges in S
+        S.append(v)                             # entry
+        h = len(S) - 1                          # number of edges in S
         for w in G.successors(v):
-            if h < k: # admissible length?
+            if h < k:                           # is w admissible?
                 if w == t:
-                    yield S + [t]  # output
-                elif w not in S:
-                    yield from search(w)
+                    yield S + [t]               # output
+                elif w not in S and h < k - 1:  # w must still reach t
+                    yield from search(w)        # descend into w
         S.pop()
 
     yield from search(s)
