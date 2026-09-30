@@ -65,6 +65,7 @@ Note: Several optimizations are useful but not shown for clarity.
 Path 0→1→…→2d plus shortcuts 2i→2i+2; the two-edge leg comes first in adjacency order.
 
 ```python
+import networkx as nx
 import time
 
 d = 32 # number of triangles
