@@ -128,7 +128,7 @@ Both [bsdfs](bsdfs.md) and [bbdfs](bbdfs.md) use barriers for pruning.
 Therefore, every step executed by either algorithm is also executed by [dldfs](dldfs.md).
 When pruning occurs, the algorithm pauses and remains idle
 until [dldfs](dldfs.md) reaches the corresponding search state.
-The diagram shows the number of outputs produced so far.
+The diagram shows the number of search calls made so far.
 
 <video controls playsinline preload="metadata" style="width:100%; height:auto;">
   <source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}" type="video/mp4">
