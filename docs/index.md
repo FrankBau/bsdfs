@@ -104,15 +104,13 @@ But only as far as needed to restore *edge-consistency*, a property defined and 
 
 # BS-DFS in Action
 
-An animated run of the input.
+The video shows execution of the following code:
 
 ```python
   import networkx as nx
   Z = nx.parse_adjlist(['s a d', 'a c t', 'b a', 'c b z', 'd t z', 'z b c'], create_using=nx.DiGraph)
   list(bsdfs(Z, "s", "t", 5))
 ```
-
-The steps counts correspond to the paper.
 
 <video controls playsinline preload="metadata" style="width:100%; height:auto;">
   <source src="{{ '/assets/videos/bsdfs_steps_example.mp4' | relative_url }}" type="video/mp4">
@@ -128,8 +126,9 @@ All edges are processed in the same adjacency-list order.
 [dldfs](dldfs.md) performs depth-first search limited to the depth k.
 Both [bsdfs](bsdfs.md) and [bbdfs](bbdfs.md) use barriers for pruning.
 Therefore, every step executed by either algorithm is also executed by [dldfs](dldfs.md).
-When pruning occurs, the algorithm pauses and remains idle until [dldfs](dldfs.md) reaches the corresponding search state.
-The diagram tracks the number of search calls made.
+When pruning occurs, the algorithm pauses and remains idle
+until [dldfs](dldfs.md) reaches the corresponding search state.
+The diagram shows the number of outputs produced so far.
 
 <video controls playsinline preload="metadata" style="width:100%; height:auto;">
   <source src="{{ '/assets/videos/bsdfs_calls_N14_seed88_k5.mp4' | relative_url }}" type="video/mp4">
@@ -138,10 +137,14 @@ The diagram tracks the number of search calls made.
 
 ## Verdict
 
-- [bbdfs](bbdfs.md) achieves the best runtime performance, but it is incomplete, as it misses one output path.
-  Since [bbdfs](bbdfs.md) is designed only to find the *first* output, this is not unexpected.
-  Up to the first output, its execution is always identical to that of [bsdfs](bsdfs.md).
-- [bsdfs](bsdfs.md) is slightly slower than [bbdfs](bbdfs.md) because of the cascade operations 
-  performed after each fruitful search, but it guarantees both output completeness and polynomial delay
-- [dldfs](dldfs.md) is the slowest of the three algorithms.
-  While it is also complete, it provides no guarantee of polynomial delay.
+- [bbdfs](bbdfs.md) is fast but *incomplete*: in this example it misses one output path.
+  Since [bbdfs](bbdfs.md) is designed only to find the *first* output, this is not unexpected:
+  raised barriers become stale when the search path changes, and bbdfs never lowers them.
+  Up to the first fruitful return, where bsdfs starts its first cascade, always after the first output,
+  its execution is identical to that of [bsdfs](bsdfs.md).
+- [bsdfs](bsdfs.md) is also fast compared to [dldfs](dldfs.md).
+  In the example it spends more steps than [bbdfs](bbdfs.md) because of the cascade operations
+  in fruitful searches, but this is exactly what guarantees both output completeness and a delay of O(k(n+m)).
+- [dldfs](dldfs.md) is the slowest in the example, and it always makes the most calls,
+  since the other two only make calls that dldfs makes as well.
+  While it is also complete, it provides no guarantee of polynomial delay and can show delays exponential in the graph size.
