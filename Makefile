@@ -10,7 +10,7 @@
 PYTHON  ?= python3
 PYFLAGS ?= -u -OO
 
-EXPERIMENTS = missed_paths steps runtime delay_bounds path_counts
+EXPERIMENTS = missed_paths steps runtime runtime_ss delay_bounds path_counts
 PDFS = $(addsuffix .pdf,$(EXPERIMENTS))
 
 export PYTHONIOENCODING = utf-8
@@ -40,6 +40,7 @@ $(PDFS): graph_generator.py
 
 # these import the reference implementations
 missed_paths.pdf runtime.pdf: bsdfs.py bcdfs.py
+runtime_ss.pdf: bsdfs.py simple_search.py
 path_counts.pdf: bsdfs.py          # BS-DFS only, as the complete-enumeration oracle
 
 clean:

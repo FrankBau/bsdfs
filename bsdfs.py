@@ -58,9 +58,9 @@ def bsdfs(G, s, t, k):
 
 
 if __name__ == "__main__":
-    # the algorithm above needs only the standard library; the self-check
-    # additionally uses NetworkX to draw the random instances and bsdfs_trival.py
-    # as known-good implementation
+    # the algorithm above needs only the standard library;
+    # the self-check additionally uses NetworkX to draw the random instances
+    # and bsdfs_trival.py as known-good implementation
 
     import random
     import networkx as nx
