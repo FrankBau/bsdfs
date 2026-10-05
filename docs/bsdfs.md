@@ -14,45 +14,44 @@ def bsdfs(G, s, t, k):
     S = []                                      # current search path
 
 
-    def cascade(v, sd):
+    def cascade(v):
         """Distance propagation (reverse BFS)."""
 
-        Q = deque([(v, sd)])                    # initialize worklist
+        Q = deque([v])                          # initialize worklist with node v
         while Q:
-            q, d = Q.popleft()                  # dequeue next item
-            for p in G.predecessors(q):
-                                                # predecessor scan
-                if p not in S and b[p] > d + 1:
-                    b[p] = d + 1                # drop barrier
-                    Q.append((p, d + 1))        # propagate further
+            q = Q.popleft()                     # dequeue next node q (initially v)
+            d = b[q]                            # get its barrier (distance) value
+            for p in G.predecessors(q):         # scan each predecessor of q
+                if b[p] > d + 1 and p not in S: # edge-consistency broken at p?
+                    b[p] = d + 1                # repair it, drop barrier at p
+                    Q.append(p)                 # propagate cascade further
 
 
     def search(v):
         """Recursive bounded-scope DFS."""
 
-        S.append(v)                             # entry
+        S.append(v)                             # search call entry
         h = len(S) - 1                          # number of edges in S
 
-        # shortest v-t distance w.r.t. current path S
-        sd = k + 1                              # "infinity" (no path found yet)
-        for w in G.successors(v):
-                                                # successor scan
-            if b[w] + h < k:                    # is w admissible?
-                if w == t:
+        # sd = shortest v→t distance avoiding S, if ≤ k−h; else k+1
+        sd = k + 1                              # sentinel (∞): no path to t found yet
+        for w in G.successors(v):               # scan each successor of v
+            if b[w] + h < k:                    # is w admissible? (the *scope*)
+                if w == t:                      # target reached?
                     yield S + [t]               # output, report path
-                    sd = 1                      # edge (v,t)
+                    sd = 1                      # edge (v, t)
                 elif w not in S:                # keep simplicity of S
                     d = yield from search(w)    # descend into w
                     sd = min(sd, d + 1)         # shortest distance wins
 
         if sd <= k:                             # any path to t found?
             b[v] = sd                           # fruitful, update barrier
-            cascade(v, sd)                      # repair edge-consistency
+            cascade(v)                          # repair edge-consistency
         else:
             b[v] = k + 1 - h                    # fruitless, raise barrier
 
-        S.pop()
-        return sd
+        S.pop()                                 # search call exit
+        return sd                               # return shortest distance found
 
     yield from search(s)
 ```
@@ -60,7 +59,7 @@ def bsdfs(G, s, t, k):
 Note: Several optimizations are useful but not shown for clarity.
 
 
-# Directed triangular snake graph example
+# Directed Triangular Snake Graph Example
 
 Path 0→1→…→2d plus shortcuts 2i→2i+2; the two-edge leg comes first in adjacency order.
 
@@ -90,4 +89,4 @@ print(f"dldfs {tock-tick:10.8f}s:", P0)
 ```
 
 Both outputs are correct.
-Bounded-Scope DFS took 0.00047s, plain depth-limited DFS needs more than 5s (i7-14700K, 64GB, Win11).
+Bounded Scope Depth-First Search took 0.00047s, plain depth-limited DFS needs more than 5s (i7-14700K, 64GB, Win11).
