@@ -9,8 +9,8 @@ submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://j
 # Basics
 
 A call `bsdfs(G, s, t, k)` enumerates all simple paths in graph `G`
-starting at vertex `s` and terminating at vertex `t` having at most `k` edges.
-For the special case `s==t`, simple cycles through vertex `s` are enumerated,
+starting at node `s` and terminating at node `t` having at most `k` edges.
+For the special case `s==t`, simple cycles through node `s` are enumerated,
 including cycles of length 2, which are excluded in some literature.
 
 For graph terminology, we follow the book [Algorithms, 4th Edition by Robert Sedgewick and Kevin Wayne](https://algs4.cs.princeton.edu/).
@@ -55,14 +55,15 @@ Then, the *delay* (waiting time between two consecutive events) is bounded by O(
 Here, n=|V| is the number of vertices and m=|E| is the number of edges in G.
 So, for any fixed k, the delay is linear in the graph size.
 
-With a suitable definition of elementary steps (vertex visits, edge scans, barrier writes, output),
+With a suitable definition of elementary steps (node visit or output, edge scan),
 the following is proven in our paper:
 
-- the worst-case delay between two consecutive events is at most 3(k+1)(n+m) steps, and
-- for every p≥1, the first p events are produced within 2p(k+1)(n+m) steps,
+- the worst-case delay between two consecutive events is at most 3(k+1)(n+m)
+  elementary steps, and
+- for every p≥1, the first p events are produced within 2p(k+1)(n+m) elementary steps,
   i.e. the amortized delay is at most 2(k+1)(n+m) steps per event.
 
-In benchmark tests, the observed delays were typically well below these theoretical bounds.
+In benchmark tests, the observed delays were typically well below these theoretical upper bounds.
 
 
 # Motivation
@@ -70,22 +71,22 @@ In benchmark tests, the observed delays were typically well below these theoreti
 A depth-first search will eventually enumerate all s-t paths or s-cycles.
 If the search depth is limited to k (see [dldfs](dldfs.md)), length-bounded
 s-t paths or s-cycles will be enumerated.
-The problem is that this kind of search recurses over and over again when a vertex is revisited.
+The problem is that this kind of search recurses over and over again when a node is revisited.
 For example, let `s` lie in a large clique from which `t` is reachable via a single edge `(s, t)` which comes last in the adjacency list of `s`.
 Then all search paths of length ≤ k inside the clique are fruitlessly explored
 *before* edge (s, t) is scanned and the path (s, t) is reported.
 The number of such search paths, and hence the delay until the first output, can be exponential in the clique size.
 
-To avoid repeated fruitless searches, each vertex `x` gets a barrier `b[x]`,
+To avoid repeated fruitless searches, each node `x` gets a barrier `b[x]`,
 initially 0, see [bbdfs](bbdfs.md).
 Let `h` denote the length of the current search path from `s` to `x`.
 If `search(x)` finds no path to `t`, the barrier is raised to `b[x] = k - h + 1`.
-When some later `search(y)` with search path length `h'` scans the same vertex `x` in its successor loop,
+When some later `search(y)` with search path length `h'` scans the same node `x` in its successor loop,
 the entry condition `if b[x] + h' < k` ensures that `search(x)` is called
 only if the new search path length `h' + 1` (including `x`) is smaller than the old length `h`;
 i.e. if that later search arrives at `x` with more budget left to reach `t`.
 In this phase barriers only increase.
-Each vertex is entered at most k+1 times, so the total work for finding a first path/cycle
+Each node is entered at most k+1 times, so the total work for finding a first path/cycle
 is bounded by (k+1)(n+m).
 
 The above method works if only the *first* s-t path P0 of length ≤ k is wanted (or only its existence).
@@ -94,7 +95,7 @@ When the search backtracks, popped vertices are no longer blocked for a re-visit
 and a formerly fruitless search may become a fruitful one.
 
 How does [bsdfs](bsdfs.md) repair barriers for re-use when more paths than P0 are requested?
-Resetting all barriers to 0 when a vertex `v` is popped keeps the algorithm correct
+Resetting all barriers to 0 when a node `v` is popped keeps the algorithm correct
 but throws away the work already spent, and the delay bounds no longer hold.
 Instead, `b[v]` is set to `sd`,
 the length of the shortest path to `t` found from `v` with respect to the now-current search path.
