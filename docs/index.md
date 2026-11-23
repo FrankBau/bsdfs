@@ -1,10 +1,8 @@
-A short intro to the [BS-DFS](bsdfs.md) algorithm from our [preprint](https://doi.org/10.48550/arXiv.2607.14745):
+A short intro to the [BS-DFS](bsdfs.md) algorithm from our preprint
 
 > Frank Bauernöppel, Jörg-Rüdiger Sack;
 > "Enumerating Length-Bounded Simple Paths and Cycles in Directed Graphs with O(k(n+m)) Delay Using Edge-Consistent Node Barriers"
-
-submitted to [The Journal of Graph Algorithms and Applications (JGAA)](https://jgaa.info/).
-
+> https://doi.org/10.48550/arXiv.2607.14745
 
 # Basics
 
